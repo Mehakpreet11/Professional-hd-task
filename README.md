@@ -225,8 +225,8 @@ tests/
 
 ## Resources
 
-- **GitHub Repository**: [Insert repo link here]
-- **Trello Board**: [Project Management Board]
+- **GitHub Repository**: https://github.com/BikuDas-Deakin/StudyMate
+- **Trello Board**: https://trello.com/invite/b/68b7ef1e0722ebe79760e74d/ATTI0bc6f91b8f3d0256dd20099cbbb1c5e9E5E19FF6/studymate
 - **API Documentation**: See `/docs/api.md`
 - **Design Guidelines**: See `/docs/uiux.md`
 
@@ -238,6 +238,3 @@ For questions or issues:
 3. Contact team members via project communication channels
 4. Refer to documentation in `/docs/` folder
 
----
-
-**Ready to start coding! 🚀📚**
