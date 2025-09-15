@@ -1,7 +1,7 @@
-// backend/app.js
 const express = require("express");
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
+const passport = require("passport");
 
 dotenv.config(); // load .env
 
@@ -13,9 +13,10 @@ app.use((req, res, next) => {
   next();
 });
 
-
 // Middleware
 app.use(express.json());
+app.use(passport.initialize());
+require("./middleware/passport");
 
 // Routes
 const authRoutes = require("./routes/auth");
@@ -26,12 +27,10 @@ app.get("/", (req, res) => {
   res.send("StudyMate API is running ");
 });
 
-
-
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
-.then(() => console.log("MongoDB connected"))
-.catch((err) => console.error("MongoDB connection error:", err));
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => console.error("MongoDB connection error:", err));
 
 // Server start
 const PORT = process.env.PORT || 5000;
