@@ -15,7 +15,7 @@ Web-based platform for students to create study groups, share resources, and col
 
 ### Programming Language
 - **Node.js** (Backend)
-- **Vanilla JavaScript** (Frontend)
+- **JavaScript** (Frontend)
 
 ### Web Development
 - **HTML5**, **CSS3**, **JavaScript** (Core frontend)
