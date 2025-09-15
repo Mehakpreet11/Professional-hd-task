@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Create Room</title>
+</head>
+<body>
+  <h1>Create a New Room</h1>
+  <form id="roomForm">
+    <label>
+      Room Name:
+      <input type="text" id="roomName" required>
+    </label>
+    <br><br>
+    <label>
+      Creator ID:
+      <input type="text" id="creatorId" required>
+    </label>
+    <br><br>
+    <button type="submit">Create Room</button>
+  </form>
+
+  <h2>Response:</h2>
+  <pre id="response"></pre>
+  <p id="roomLink"></p>
+
+  <script>
+    const form = document.getElementById("roomForm");
+    const responseEl = document.getElementById("response");
+    const roomLinkEl = document.getElementById("roomLink");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const roomName = document.getElementById("roomName").value;
+      const creatorId = document.getElementById("creatorId").value;
+
+      try {
+        const res = await fetch("http://localhost:5000/api/rooms", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ roomName, creatorId })
+        });
+
+        const data = await res.json();
+        responseEl.textContent = JSON.stringify(data, null, 2);
+
+        if (data.roomLink) {
+          roomLinkEl.innerHTML = `Room Link: <a href="${data.roomLink}" target="_blank">${data.roomLink}</a>`;
+        }
+      } catch (err) {
+        responseEl.textContent = "Error: " + err.message;
+        roomLinkEl.textContent = "";
+      }
+    });
+  </script>
+</body>
+</html>
