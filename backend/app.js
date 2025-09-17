@@ -2,39 +2,44 @@ const express = require("express");
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const passport = require("passport");
+const path = require("path");
 
-dotenv.config(); // load .env
+dotenv.config(); // Load environment variables
 
 const app = express();
-
-app.use((req, res, next) => {
-  console.log(`Request received: ${req.method} ${req.url}`);
-  next();
-});
 
 // Middleware
 app.use(express.json());
 app.use(passport.initialize());
 require("./middleware/passport");
 
+// Serve static frontend files
+app.use(express.static(path.join(__dirname, '../frontend/public')));
+
 // Routes
 const authRoutes = require("./routes/auth");
-app.use("/api/auth", authRoutes);
 const chatRoutes = require("./routes/chat");
+
+app.use("/api/auth", authRoutes);
 app.use("/api/chat", chatRoutes);
 
-// Basic test route
+// Serve login page
+app.get("/login", (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend/public/login.html"));
+});
+
+// Redirect root to login
 app.get("/", (req, res) => {
-  res.send("StudyMate API is running ");
+  res.redirect("/login");
 });
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error("MongoDB connection error:", err));
+  .catch(err => console.error("MongoDB connection error:", err));
 
-// Server start
+// Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(` Server running on http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
