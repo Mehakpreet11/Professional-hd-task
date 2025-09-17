@@ -2,6 +2,7 @@
 const form = document.getElementById('loginForm');
 const emailError = document.getElementById('emailError');
 const passwordError = document.getElementById('passwordError');
+const generalError = document.getElementById('generalError');
 const togglePassword = document.getElementById('togglePassword');
 const passwordInput = document.getElementById('password');
 
@@ -20,15 +21,17 @@ function showError(element) {
 function hideErrors() {
   emailError.style.display = 'none';
   passwordError.style.display = 'none';
+  generalError.style.display = 'none';
 }
 
-// Form submit: validate + backend call
+// Form submit: validate + backend + JWT storage + redirect
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   hideErrors();
 
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
+  const remember = document.getElementById('remember').checked;
 
   let valid = true;
 
@@ -59,7 +62,11 @@ form.addEventListener('submit', async (e) => {
       return;
     }
 
-    alert('Login successful! Next step: store JWT and redirect.');
+    // Store JWT in localStorage
+    localStorage.setItem('token', data.token);
+
+    // Redirect to dashboard
+    window.location.href = '/dashboard.html';
   } catch (err) {
     console.error(err);
     generalError.textContent = 'Something went wrong.';
