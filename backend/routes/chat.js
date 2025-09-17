@@ -1,6 +1,6 @@
-import express from "express";
-import passport from "passport";
-import { postMessage, getMessages } from "../controllers/chatController.js";
+const express = require("express");
+const passport = require("passport");
+const { postMessage, getMessages } = require("../controllers/chatController");
 
 const router = express.Router();
 
@@ -17,4 +17,4 @@ router.get(
   getMessages
 );
 
-export default router;
+module.exports = router;

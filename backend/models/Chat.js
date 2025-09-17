@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 // Chat schema: stores messages per room
 const chatSchema = new mongoose.Schema(
@@ -28,4 +28,4 @@ chatSchema.index({ roomId: 1, createdAt: -1 });
 
 const Chat = mongoose.model("Chat", chatSchema);
 
-export default Chat;
+module.exports = Chat;

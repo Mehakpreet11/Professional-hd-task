@@ -1,7 +1,7 @@
-import Chat from "../models/Chat.js";
+const Chat = require("../models/Chat");
 
 // POST /api/rooms/:id/messages → create a new message
-export const postMessage = async (req, res) => {
+const postMessage = async (req, res) => {
   try {
     const { id: roomId } = req.params;
     const { message } = req.body;
@@ -21,7 +21,7 @@ export const postMessage = async (req, res) => {
 };
 
 // GET /api/rooms/:id/messages → fetch recent messages
-export const getMessages = async (req, res) => {
+const getMessages = async (req, res) => {
   try {
     const { id: roomId } = req.params;
     const limit = parseInt(req.query.limit) || 50; // default 50 messages
@@ -35,4 +35,9 @@ export const getMessages = async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+};
+
+module.exports = {
+  postMessage,
+  getMessages,
 };

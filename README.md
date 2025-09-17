@@ -114,7 +114,7 @@ StudyMate/
 
 3. **Create .env file with environment variables**
    ```env
-   PORT=5000
+   PORT=4000
    MONGO_URI=<your-mongodb-uri>
    JWT_SECRET=<your-jwt-secret>
    NODE_ENV=development
@@ -126,7 +126,7 @@ StudyMate/
    ```
 
 5. **Access the frontend via the Express routes or EJS templates**
-   - Application: `http://localhost:5000`
+   - Application: `http://localhost:4000`
 
 ## Docker Setup
 
@@ -148,7 +148,7 @@ StudyMate/
    ```
 
 5. **Verify backend and MongoDB services are running and accessible**
-   - Backend: `http://localhost:5000`
+   - Backend: `http://localhost:4000`
    - MongoDB: `localhost:27017`
 
 6. **Stop containers**

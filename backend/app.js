@@ -7,7 +7,6 @@ dotenv.config(); // load .env
 
 const app = express();
 
-// app.js (after const app = express();)
 app.use((req, res, next) => {
   console.log(`Request received: ${req.method} ${req.url}`);
   next();
@@ -21,6 +20,8 @@ require("./middleware/passport");
 // Routes
 const authRoutes = require("./routes/auth");
 app.use("/api/auth", authRoutes);
+const chatRoutes = require("./routes/chat");
+app.use("/api/chat", chatRoutes);
 
 // Basic test route
 app.get("/", (req, res) => {
