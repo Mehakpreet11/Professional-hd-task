@@ -22,8 +22,8 @@ function hideErrors() {
   passwordError.style.display = 'none';
 }
 
-// Form submit: validate inputs only
-form.addEventListener('submit', (e) => {
+// Form submit: validate + backend call
+form.addEventListener('submit', async (e) => {
   e.preventDefault();
   hideErrors();
 
@@ -42,7 +42,27 @@ form.addEventListener('submit', (e) => {
     valid = false;
   }
 
-  if (valid) {
-    alert('All inputs valid! Next step: integrate backend.');
+  if (!valid) return;
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      generalError.textContent = data.message || 'Login failed';
+      showError(generalError);
+      return;
+    }
+
+    alert('Login successful! Next step: store JWT and redirect.');
+  } catch (err) {
+    console.error(err);
+    generalError.textContent = 'Something went wrong.';
+    showError(generalError);
   }
 });
