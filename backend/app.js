@@ -18,20 +18,19 @@ app.use(express.static(path.join(__dirname, '../frontend/public')));
 
 // Routes
 const authRoutes = require("./routes/auth");
+const dashboardRoutes = require("./routes/dashboard");
+const roomsRoutes = require("./routes/rooms");
 const chatRoutes = require("./routes/chat");
 
-app.use("/api/auth", authRoutes);
-app.use("/api/chat", chatRoutes);
-
-// Serve login page
-app.get("/login", (req, res) => {
-  res.sendFile(path.join(__dirname, "../frontend/public/login.html"));
-});
-
-// Redirect root to login
+// Redirect root URL to dashboard
 app.get("/", (req, res) => {
-  res.redirect("/login");
+  res.redirect("/dashboard.html"); // dashboard.html if user token in locla storage
 });
+
+app.use("/api/auth", authRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/rooms", roomsRoutes);
+app.use("/api/chat", chatRoutes);
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
