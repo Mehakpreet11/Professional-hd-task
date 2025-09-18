@@ -15,56 +15,82 @@ function initSocket(server) {
       socket.data.user = decoded;
       next();
     } catch (err) {
+      console.error("[SOCKET] Invalid token:", err.message);
       next(new Error("Authentication error: invalid token"));
     }
   });
 
   io.on("connection", (socket) => {
-    const userId = socket.data.user.id;
+    const userId = socket.data.user?.id || "unknown";
+    console.log(`[SOCKET] Connected: ${socket.id} userId=${userId}`);
 
     socket.on("joinRoom", async ({ roomId }) => {
-      const username = socket.data.user.username || "Unknown";
-      socket.join(roomId);
+      try {
+        const username = socket.data.user.username || "Unknown";
+        socket.join(roomId);
 
-      if (!rooms[roomId]) {
-        rooms[roomId] = {
-          participants: [],
-          adminId: socket.id,
-          timer: { timeLeft: 25*60, running: false, phase: "Study Time" },
-          currentSession: 1,
-          totalSessions: 4
-        };
+        if (!rooms[roomId]) {
+          rooms[roomId] = {
+            participants: [],
+            adminId: socket.id,
+            timer: { timeLeft: 25*60, running: false, phase: "Study Time" },
+            currentSession: 1,
+            totalSessions: 4
+          };
+        }
+
+        const room = rooms[roomId];
+        const existing = room.participants.find(p => p.userId === userId);
+        if (!existing) room.participants.push({ socketId: socket.id, userId, username });
+        else existing.socketId = socket.id;
+
+        io.to(roomId).emit("participantsUpdate", { participants: room.participants, adminId: room.adminId });
+        io.to(roomId).emit("systemMessage", `${username} joined the room`);
+
+        const messages = await Chat.find({ roomId }).sort({ createdAt: 1 }).populate("senderId", "username");
+        const formatted = messages.map(m => ({
+          username: m.senderId.username,
+          message: m.message,
+          createdAt: m.createdAt
+        }));
+        socket.emit("loadMessages", formatted);
+
+      } catch (err) {
+        console.error("[SOCKET] joinRoom error:", err);
+        socket.emit("errorMessage", "Failed to join room");
       }
+    });
 
-      const room = rooms[roomId];
-      const existing = room.participants.find(p => p.userId === userId);
-      if (!existing) room.participants.push({ socketId: socket.id, userId, username });
-      else existing.socketId = socket.id;
-
-      io.to(roomId).emit("participantsUpdate", { participants: room.participants, adminId: room.adminId });
-      io.to(roomId).emit("systemMessage", `${username} joined the room`);
+    socket.on("sendMessage", async ({ roomId, message }) => {
+      try {
+        const username = socket.data.user.username || "Unknown";
+        await Chat.create({ roomId, senderId: userId, message });
+        io.to(roomId).emit("newMessage", { username, message, createdAt: new Date() });
+      } catch (err) {
+        console.error("[SOCKET] sendMessage error:", err);
+        socket.emit("errorMessage", "Failed to send message");
+      }
     });
 
     socket.on("disconnect", () => {
-      for (const roomId in rooms) {
-        const room = rooms[roomId];
-        const idx = room.participants.findIndex(p => p.socketId === socket.id);
-        if (idx !== -1) {
-          const [leaving] = room.participants.splice(idx, 1);
+      try {
+        for (const roomId in rooms) {
+          const room = rooms[roomId];
+          const idx = room.participants.findIndex(p => p.socketId === socket.id);
+          if (idx !== -1) {
+            const [leaving] = room.participants.splice(idx, 1);
 
-          // reassign admin if necessary
-          if (room.adminId === socket.id) {
-            if (room.participants.length > 0) {
-              room.adminId = room.participants[0].socketId;
-              io.to(roomId).emit("systemMessage", `${room.participants[0].username} is now the admin`);
-            } else {
-              room.adminId = null;
+            if (room.adminId === socket.id) {
+              room.adminId = room.participants.length > 0 ? room.participants[0].socketId : null;
+              if (room.adminId) io.to(roomId).emit("systemMessage", `${room.participants[0].username} is now the admin`);
             }
-          }
 
-          io.to(roomId).emit("participantsUpdate", { participants: room.participants, adminId: room.adminId });
-          io.to(roomId).emit("systemMessage", `${leaving.username} left the room`);
+            io.to(roomId).emit("participantsUpdate", { participants: room.participants, adminId: room.adminId });
+            io.to(roomId).emit("systemMessage", `${leaving.username} left the room`);
+          }
         }
+      } catch (err) {
+        console.error("[SOCKET] disconnect error:", err);
       }
     });
   });
@@ -90,6 +116,10 @@ function initSocket(server) {
       }
     }
   }, 1000);
+
+  io.on("error", (err) => {
+    console.error("[SOCKET] General error:", err);
+  });
 
   return io;
 }
