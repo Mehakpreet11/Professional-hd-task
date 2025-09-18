@@ -29,7 +29,13 @@ function initSocket(server) {
       socket.join(roomId);
 
       if (!rooms[roomId]) {
-        rooms[roomId] = { participants: [], adminId: socket.id };
+        rooms[roomId] = {
+          participants: [],
+          adminId: socket.id,
+          timer: { timeLeft: 25 * 60, running: false, phase: "Study Time" },
+          currentSession: 1,
+          totalSessions: 4
+        };
       }
 
       const room = rooms[roomId];
@@ -45,21 +51,20 @@ function initSocket(server) {
       io.to(roomId).emit("systemMessage", `${username} joined the room`);
 
       try {
-        const messages = await Chat.find({ roomId })
-          .sort({ createdAt: 1 })
-          .populate("senderId", "username");
-
+        const messages = await Chat.find({ roomId }).sort({ createdAt: 1 }).populate("senderId", "username");
         const formatted = messages.map(m => ({
           username: m.senderId.username,
           message: m.message,
           createdAt: m.createdAt
         }));
-
         socket.emit("loadMessages", formatted);
       } catch (err) {
         console.error("[JOIN] Failed to load messages:", err);
         socket.emit("loadMessages", []);
       }
+
+      socket.emit("timerUpdate", room.timer);
+      socket.emit("sessionUpdate", { currentSession: room.currentSession, totalSessions: room.totalSessions });
     });
 
     socket.on("sendMessage", async ({ roomId, message }) => {
@@ -92,6 +97,31 @@ function initSocket(server) {
       }
     });
   });
+
+  setInterval(() => {
+    for (const roomId in rooms) {
+      const room = rooms[roomId];
+      if (room.timer.running) {
+        room.timer.timeLeft--;
+
+        if (room.timer.timeLeft <= 0) {
+          room.timer.running = false;
+          if (room.timer.phase === "Study Time") {
+            room.timer.phase = "Break Time";
+            room.timer.timeLeft = 5 * 60;
+          } else {
+            room.timer.phase = "Study Time";
+            room.timer.timeLeft = 25 * 60;
+            if (room.currentSession < room.totalSessions) room.currentSession++;
+          }
+
+          io.to(roomId).emit("sessionUpdate", { currentSession: room.currentSession, totalSessions: room.totalSessions });
+        }
+
+        io.to(roomId).emit("timerUpdate", room.timer);
+      }
+    }
+  }, 1000);
 
   return io;
 }
