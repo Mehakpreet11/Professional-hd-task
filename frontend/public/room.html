@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyMate - Room</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css"
+    rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@600;700&display=swap"
+    rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #F8FAFC;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* Header */
+    .room-header {
+      background: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      flex-shrink: 0;
+    }
+
+    .room-info h1 {
+      margin-bottom: 0.25rem;
+    }
+
+    .room-code {
+      font-size: 0.875rem;
+      color: #64748B;
+    }
+
+    .leave-btn {
+      background: #DC2626;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    /* Main Layout */
+    .main-content {
+      display: flex;
+      flex: 1;
+      gap: 1rem;
+      padding: 1rem 2rem;
+      min-height: 0;
+    }
+    .flash {
+      transform: scale(1.2);
+      transition: transform 0.2s;
+    }
+    
+
+    /* Participants Column */
+    .participants-section {
+      width: 200px;
+      background: white;
+      border-radius: 16px;
+      padding: 1rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      border: 1px solid #E2E8F0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .participants-section h5 {
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: #1E3A8A;
+    }
+
+    .participant {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .participant-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #3B82F6;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+    }
+
+    /* Timer Column */
+    .timer-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: white;
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      border: 1px solid #E2E8F0;
+    }
+
+    .session-tab {
+      background: #E0F2FE;
+      color: #1E3A8A;
+      font-weight: 600;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      margin-bottom: 1rem;
+      font-size: 0.95rem;
+    }
+
+    .timer-circle {
+      width: 250px;
+      height: 250px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1E3A8A, #3B82F6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .timer-display {
+      color: white;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 3rem;
+      font-weight: 700;
+    }
+
+    .phase-indicator {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 1rem;
+    }
+
+    .timer-controls {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .control-btn {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+
+    .play-btn {
+      background: #059669;
+      color: white;
+      width: 70px;
+      height: 70px;
+      font-size: 1.5rem;
+    }
+
+    /* Chat Section */
+    .chat-section {
+      width: 350px;
+      display: flex;
+      flex-direction: column;
+      background: white;
+      border-radius: 16px;
+      padding: 1rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      border: 1px solid #E2E8F0;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5rem 0;
+    }
+
+    .message {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .message-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+
+    .message-content {
+      flex: 1;
+    }
+
+    .message-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      margin-bottom: 0.25rem;
+      color: #64748B;
+    }
+
+    .message-sender {
+      font-weight: 600;
+      color: #1E3A8A;
+    }
+
+    .message-time {
+      font-size: 0.7rem;
+      color: #94A3B8;
+    }
+
+    .message-text {
+      background: #F1F5F9;
+      padding: 0.5rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.875rem;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .system-message {
+      text-align: center;
+      font-size: 0.75rem;
+      color: #94A3B8;
+      margin: 0.5rem 0;
+    }
+
+    .chat-input {
+      display: flex;
+      gap: 0.5rem;
+      padding-top: 0.5rem;
+    }
+
+    .message-input {
+      flex: 1;
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      border: 1px solid #E2E8F0;
+      resize: none;
+    }
+
+    .send-btn {
+      background: #1E3A8A;
+      color: white;
+      border: none;
+      padding: 0 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Room Header -->
+  <header class="room-header">
+    <div class="room-info">
+      <h1 id="roomName">Room Name</h1>
+      <div class="room-code" id="roomCode">Room Code:</div>
+    </div>
+    <button class="leave-btn" id="leaveBtn">Leave Room</button>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Participants Column -->
+    <section class="participants-section">
+      <h5>Participants</h5>
+      <div id="participantsList"></div>
+    </section>
+
+    <!-- Timer Column -->
+    <section class="timer-section">
+      <div class="session-tab">
+        <span id="currentSession">1</span> / <span id="totalSessions">4</span> Sessions
+      </div>
+
+      <div class="timer-circle">
+        <div class="timer-display" id="timerDisplay">25:00</div>
+        <div class="phase-indicator" id="phaseIndicator">Study Time</div>
+      </div>
+      <div class="timer-controls">
+        <button class="control-btn" id="skipBtn">⏭</button> <!-- skip forward -->
+        <button class="control-btn play-btn" id="playBtn">▶</button> <!-- play/pause -->
+        <button class="control-btn" id="resetBtn">⏹</button> <!-- reset -->
+      </div>
+
+    </section>
+
+    <!-- Chat Column -->
+    <section class="chat-section">
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="chat-input">
+        <textarea id="messageInput" class="message-input" placeholder="Type a message..." rows="1"></textarea>
+        <button class="send-btn" id="sendBtn">Send</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Scripts -->
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="./js/room.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
