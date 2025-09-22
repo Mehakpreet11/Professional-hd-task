@@ -4,6 +4,8 @@ const mongoose = require("mongoose");
 const passport = require("passport");
 const path = require("path");
 const testRouter = require("./routes/test")
+const http = require("http");
+const { initSocket } = require("./socket");
 
 dotenv.config(); // Load environment variables
 
@@ -44,8 +46,12 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
   .catch(err => console.error("MongoDB connection error:", err));
 
+  // Create HTTP server and attach Socket.IO
+const server = http.createServer(app);
+const io = initSocket(server); // attach socket to the HTTP server
+
 // Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
