@@ -48,6 +48,9 @@ document.addEventListener("DOMContentLoaded", () => {
     socket = io({ auth: { token } });
 
     socket.on("connect", () => socket.emit("joinRoom", { roomId }));
+    socket.on("roomInfo", ({ roomName }) => {
+      document.getElementById("roomName").textContent = roomName;
+    });    
 
     // Participants
     socket.on("participantsUpdate", ({ participants, adminId }) => {
@@ -167,7 +170,7 @@ document.addEventListener("DOMContentLoaded", () => {
       sendBtn.click();
     }
   });
-  
+
 //leave room
   leaveBtn?.addEventListener("click", () => {
     if (!socket) return;

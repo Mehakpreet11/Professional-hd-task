@@ -45,6 +45,8 @@ function initSocket(server) {
           };
         }
 
+        socket.emit("roomInfo", { roomName: `Room ${roomId}`, roomId });
+
         const room = rooms[roomId];
         const existing = room.participants.find(p => p.userId === userId);
 
