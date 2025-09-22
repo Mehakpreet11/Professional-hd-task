@@ -2,12 +2,14 @@ const express = require("express");
 const router = express.Router();
 const passport = require("../middleware/passport");
 const roomController = require("../controllers/roomController");
+const { createRoomValidator } = require("../validators/roomValidators");
+const validate = require("../middleware/validationHandler");
 
 // Protect routes with JWT
 const auth = passport.authenticate("jwt", { session: false });
 
-// Create Room
-router.post("/", auth, roomController.createRoom);
+// Create Room (with validation)
+router.post("/", auth, createRoomValidator, validate, roomController.createRoom);
 
 // Get Rooms
 router.get("/", auth, roomController.getRooms);
