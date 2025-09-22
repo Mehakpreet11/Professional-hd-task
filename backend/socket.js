@@ -2,6 +2,7 @@ const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 const User = require("./models/User");
 const Chat = require("./models/Chat");
+const sanitizeMessage = require("./utils/sanitizeMessage");
 
 function initSocket(server) {
   const io = new Server(server, { cors: { origin: "*" } });
@@ -12,7 +13,11 @@ function initSocket(server) {
     if (!token) return next(new Error("Authentication error: token missing"));
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      socket.data.user = decoded;
+      // Ensure both id and username are set
+      socket.data.user = {
+        id: decoded.id || decoded._id, // fallback to _id
+        username: decoded.username
+      };
       next();
     } catch (err) {
       console.error("[SOCKET] Invalid token:", err.message);
@@ -33,7 +38,7 @@ function initSocket(server) {
           rooms[roomId] = {
             participants: [],
             adminId: socket.id,
-            timer: { timeLeft: 25*60, running: false, phase: "Study Time" },
+            timer: { timeLeft: 25 * 60, running: false, phase: "Study Time" },
             currentSession: 1,
             totalSessions: 4
           };
@@ -45,7 +50,7 @@ function initSocket(server) {
         else existing.socketId = socket.id;
 
         io.to(roomId).emit("participantsUpdate", { participants: room.participants, adminId: room.adminId });
-        io.to(roomId).emit("systemMessage", `${username} joined the room`);
+        io.to(roomId).emit("systemMessage", sanitizeMessage(`${username} joined the room`));
 
         const messages = await Chat.find({ roomId }).sort({ createdAt: 1 }).populate("senderId", "username");
         const formatted = messages.map(m => ({
@@ -64,8 +69,14 @@ function initSocket(server) {
     socket.on("sendMessage", async ({ roomId, message }) => {
       try {
         const username = socket.data.user.username || "Unknown";
-        await Chat.create({ roomId, senderId: userId, message });
-        io.to(roomId).emit("newMessage", { username, message, createdAt: new Date() });
+        const cleanMessage = sanitizeMessage(message); // Sanitize message content
+        if (!cleanMessage || cleanMessage.trim() === "") {
+          // <-- Emit an error instead of silently returning
+          return socket.emit("errorMessage", "Message blocked: invalid or unsafe content");
+        }
+
+        await Chat.create({ roomId, senderId: userId, message: cleanMessage });
+        io.to(roomId).emit("newMessage", { username, message: cleanMessage, createdAt: new Date() });
       } catch (err) {
         console.error("[SOCKET] sendMessage error:", err);
         socket.emit("errorMessage", "Failed to send message");
@@ -82,11 +93,11 @@ function initSocket(server) {
 
             if (room.adminId === socket.id) {
               room.adminId = room.participants.length > 0 ? room.participants[0].socketId : null;
-              if (room.adminId) io.to(roomId).emit("systemMessage", `${room.participants[0].username} is now the admin`);
+              if (room.adminId) io.to(roomId).emit("systemMessage", sanitizeMessage(`${room.participants[0].username} is now the admin`));
             }
 
             io.to(roomId).emit("participantsUpdate", { participants: room.participants, adminId: room.adminId });
-            io.to(roomId).emit("systemMessage", `${leaving.username} left the room`);
+            io.to(roomId).emit("systemMessage", sanitizeMessage(`${leaving.username} left the room`));
           }
         }
       } catch (err) {
@@ -104,10 +115,10 @@ function initSocket(server) {
           room.timer.running = false;
           if (room.timer.phase === "Study Time") {
             room.timer.phase = "Break Time";
-            room.timer.timeLeft = 5*60;
+            room.timer.timeLeft = 5 * 60;
           } else {
             room.timer.phase = "Study Time";
-            room.timer.timeLeft = 25*60;
+            room.timer.timeLeft = 25 * 60;
             if (room.currentSession < room.totalSessions) room.currentSession++;
           }
           io.to(roomId).emit("sessionUpdate", { currentSession: room.currentSession, totalSessions: room.totalSessions });
