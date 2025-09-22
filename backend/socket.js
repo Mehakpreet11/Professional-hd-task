@@ -83,6 +83,44 @@ function initSocket(server) {
       }
     });
 
+    // Timer Controls
+    socket.on("toggleTimer", ({ roomId }) => {
+      const room = rooms[roomId];
+      if (!room) return;
+      room.timer.running = !room.timer.running;
+      io.to(roomId).emit("timerUpdate", room.timer);
+    });
+
+    socket.on("resetTimer", ({ roomId }) => {
+      const room = rooms[roomId];
+      if (!room) return;
+      room.timer.running = false;
+      room.timer.phase = "Study Time";
+      room.timer.timeLeft = 25 * 60;
+      room.currentSession = 1;
+      io.to(roomId).emit("timerUpdate", room.timer);
+      io.to(roomId).emit("sessionUpdate", { currentSession: room.currentSession, totalSessions: room.totalSessions });
+    });
+
+    socket.on("skipPhase", ({ roomId }) => {
+      const room = rooms[roomId];
+      if (!room) return;
+
+      room.timer.running = false;
+      if (room.timer.phase === "Study Time") {
+        room.timer.phase = "Break Time";
+        room.timer.timeLeft = 5 * 60;
+      } else {
+        room.timer.phase = "Study Time";
+        room.timer.timeLeft = 25 * 60;
+        if (room.currentSession < room.totalSessions) room.currentSession++;
+      }
+
+      io.to(roomId).emit("timerUpdate", room.timer);
+      io.to(roomId).emit("sessionUpdate", { currentSession: room.currentSession, totalSessions: room.totalSessions });
+    });
+
+
     socket.on("disconnect", () => {
       try {
         for (const roomId in rooms) {
