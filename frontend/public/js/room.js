@@ -19,6 +19,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const resetBtn = document.getElementById("resetBtn");
   const skipBtn = document.getElementById("skipBtn");
 
+  const leaveBtn = document.getElementById("leaveBtn");
+
   if (!roomId) {
     alert("Invalid room URL");
     window.location.href = "/dashboard.html";
@@ -164,6 +166,13 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
       sendBtn.click();
     }
+  });
+  
+//leave room
+  leaveBtn?.addEventListener("click", () => {
+    if (!socket) return;
+    socket.emit("leaveRoom", { roomId });  // Tell backend the user is leaving
+    window.location.href = "/dashboard.html";  // Redirect user after leaving
   });
 
   fetchUserAndConnect();
