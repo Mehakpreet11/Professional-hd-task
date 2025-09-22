@@ -42,6 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function connectSocket(token) {
+    let isAdmin = false;
     socket = io({ auth: { token } });
 
     socket.on("connect", () => socket.emit("joinRoom", { roomId }));
@@ -55,15 +56,21 @@ document.addEventListener("DOMContentLoaded", () => {
         const color = "#3B82F6";
         const initial = p.username?.[0] || "?";
         div.innerHTML = `
-                  <div class="participant-avatar" style="background:${color}">${initial}</div>
-                  <div class="participant-name">
-                      ${p.username || "Unknown"}${p.socketId === socket.id ? " (You)" : ""}${p.socketId === adminId ? " ★" : ""}
-                  </div>
-              `;
+          <div class="participant-avatar" style="background:${color}">${initial}</div>
+          <div class="participant-name">
+            ${p.username || "Unknown"}${p.socketId === socket.id ? " (You)" : ""}${p.socketId === adminId ? " ★" : ""}
+          </div>
+        `;
         participantsEl.appendChild(div);
       });
       participantsHeader.textContent = `Participants (${participants.length})`;
+      isAdmin = socket.id === adminId; // Set admin status
+      // Enable/disable timer buttons
+      [playBtn, skipBtn, resetBtn].forEach(btn => {
+        if (btn) btn.disabled = !isAdmin;
+      });
     });
+    
 
     // Messages
     socket.on("systemMessage", text => {

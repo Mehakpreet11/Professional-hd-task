@@ -87,6 +87,11 @@ function initSocket(server) {
     socket.on("toggleTimer", ({ roomId }) => {
       const room = rooms[roomId];
       if (!room) return;
+      // Only admin can control timer
+      if (socket.id !== room.adminId) {
+        socket.emit("errorMessage", "Only the admin can control the timer.");
+        return;
+      }
       room.timer.running = !room.timer.running;
       io.to(roomId).emit("timerUpdate", room.timer);
     });
@@ -94,6 +99,10 @@ function initSocket(server) {
     socket.on("resetTimer", ({ roomId }) => {
       const room = rooms[roomId];
       if (!room) return;
+      if (socket.id !== room.adminId) {
+        socket.emit("errorMessage", "Only the admin can reset the timer.");
+        return;
+      }
       room.timer.running = false;
       room.timer.phase = "Study Time";
       room.timer.timeLeft = 25 * 60;
@@ -105,7 +114,10 @@ function initSocket(server) {
     socket.on("skipPhase", ({ roomId }) => {
       const room = rooms[roomId];
       if (!room) return;
-
+      if (socket.id !== room.adminId) {
+        socket.emit("errorMessage", "Only the admin can skip the phase.");
+        return;
+      }
       room.timer.running = false;
       if (room.timer.phase === "Study Time") {
         room.timer.phase = "Break Time";
@@ -115,10 +127,9 @@ function initSocket(server) {
         room.timer.timeLeft = 25 * 60;
         if (room.currentSession < room.totalSessions) room.currentSession++;
       }
-
       io.to(roomId).emit("timerUpdate", room.timer);
       io.to(roomId).emit("sessionUpdate", { currentSession: room.currentSession, totalSessions: room.totalSessions });
-    });
+    });  
 
 
     socket.on("disconnect", () => {
