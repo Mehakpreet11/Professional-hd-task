@@ -1,8 +1,22 @@
 {
-  "dependencies": {
-    "bcryptjs": "^3.0.2",
-    "express-session": "^1.18.2",
-    "passport": "^0.7.0",
-    "passport-local": "^1.0.0"
+  "name": "studymate",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev:api": "cd backend && node app.js",
+    "dev:api:test": "cross-env NODE_ENV=test MONGO_URI=mongodb://localhost:27017/SM-TEST JWT_SECRET=supersecret node backend/app.js",
+    "cy:open": "cypress open --e2e",
+    "cy:run": "cypress run --e2e --browser chrome --spec \"cypress/e2e/**/*.cy.js\"",
+    "test:api": "start-server-and-test dev:api:test http://localhost:5000/health cy:run"
+  },
+  "devDependencies": {
+    "@testing-library/cypress": "^10.1.0",
+    "concurrently": "^9.2.1",
+    "cross-env": "^7.0.3",
+    "cypress": "^14.5.4",
+    "start-server-and-test": "^2.1.2"
   }
 }
