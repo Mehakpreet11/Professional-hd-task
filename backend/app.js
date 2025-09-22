@@ -3,6 +3,7 @@ const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const passport = require("passport");
 const path = require("path");
+const testRouter = require("./routes/test")
 
 dotenv.config(); // Load environment variables
 
@@ -12,6 +13,12 @@ const app = express();
 app.use(express.json());
 app.use(passport.initialize());
 require("./middleware/passport");
+app.get("/health", (_req, res) => res.json({ ok: true }));
+
+// mount test-only utilities
+if (process.env.NODE_ENV === "test") {
+  app.use("/test", testRouter);
+}
 
 // Serve static frontend files
 app.use(express.static(path.join(__dirname, '../frontend/public')));
