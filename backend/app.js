@@ -17,6 +17,13 @@ app.use(passport.initialize());
 require("./middleware/passport");
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
+app.get('/api/student', (req, res) => {
+  res.json({
+    name: 'Mehakpreet Singh Sohal',
+    studentId: '225257699'
+  });
+});
+
 // mount test-only utilities
 if (process.env.NODE_ENV === "test") {
   app.use("/test", testRouter);
