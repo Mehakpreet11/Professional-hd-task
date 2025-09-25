@@ -130,6 +130,18 @@ StudyMate/
 
 ## Docker Setup
 
+## Docker (HD)
+Build & run:
+  cd backend/docker
+  docker compose build
+  docker compose up
+
+Access:
+  http://localhost:5000/api/student
+
+Expected output:
+  {"name":"Mehakpreet Singh Sohal","studentId":"225257699"}
+
 1. **Install Docker Desktop**
 
 2. **Navigate to the `docker/` folder**
