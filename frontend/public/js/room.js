@@ -1,4 +1,4 @@
-const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000";
+const socketUrl = "https://studymate-nkce.onrender.com";
 
 document.addEventListener("DOMContentLoaded", () => {
   const urlParams = new URLSearchParams(window.location.search);
