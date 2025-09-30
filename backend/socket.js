@@ -7,7 +7,13 @@ const roomController = require("./controllers/roomController");
 const sanitizeMessage = require("./utils/sanitizeMessage");
 
 function initSocket(server) {
-  const io = new Server(server, { cors: { origin: "*" } });
+  const io = new Server(server, {
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST"],
+      credentials: true
+    }
+  });
   const rooms = {};
 
   io.use((socket, next) => {

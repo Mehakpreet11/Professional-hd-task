@@ -3,6 +3,7 @@ const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const passport = require("passport");
 const path = require("path");
+const cors = require("cors"); // ADD THIS
 const testRouter = require("./routes/test")
 const http = require("http");
 const { initSocket } = require("./socket");
@@ -11,18 +12,24 @@ dotenv.config(); // Load environment variables
 
 const app = express();
 
+// CORS Configuration - ADD THIS BEFORE OTHER MIDDLEWARE
+app.use(cors({
+  origin: [
+    'https://study-mate-9eun.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://localhost:8080'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 // Middleware
 app.use(express.json());
 app.use(passport.initialize());
 require("./middleware/passport");
 app.get("/health", (_req, res) => res.json({ ok: true }));
-
-app.get('/api/student', (req, res) => {
-  res.json({
-    name: 'Mehakpreet Singh Sohal',
-    studentId: '225257699'
-  });
-});
 
 // mount test-only utilities
 if (process.env.NODE_ENV === "test") {
@@ -40,7 +47,7 @@ const chatRoutes = require("./routes/chat");
 
 // Redirect root URL to dashboard
 app.get("/", (req, res) => {
-  res.redirect("/dashboard.html"); // dashboard.html if user token in locla storage
+  res.redirect("/dashboard.html");
 });
 
 app.use("/api/auth", authRoutes);
@@ -53,9 +60,9 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
   .catch(err => console.error("MongoDB connection error:", err));
 
-  // Create HTTP server and attach Socket.IO
+// Create HTTP server and attach Socket.IO
 const server = http.createServer(app);
-const io = initSocket(server); // attach socket to the HTTP server
+const io = initSocket(server);
 
 // Start server
 const PORT = process.env.PORT || 5000;
