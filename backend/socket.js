@@ -490,21 +490,66 @@ function initSocket(server) {
   });
 
   // Timer tick interval
-  setInterval(() => {
+  setInterval(async () => {
     for (const roomId in rooms) {
       const room = rooms[roomId];
       if (room.timer.running) {
         room.timer.timeLeft--;
         if (room.timer.timeLeft <= 0) {
           room.timer.running = false;
+
           if (room.timer.phase === "Study Time") {
+            //  STUDY SESSION COMPLETED - Update all participants
+            try {
+              const studyMinutes = room.studyInterval || 25;
+
+              for (const participant of room.participants) {
+                const user = await User.findById(participant.userId);
+                if (user) {
+                  // Increment sessions and minutes
+                  user.totalSessions += 1;
+                  user.totalMinutesStudied += studyMinutes;
+
+                  // Calculate streak (consecutive days)
+                  const today = new Date().setHours(0, 0, 0, 0);
+                  const lastStudy = user.lastStudyDate ? new Date(user.lastStudyDate).setHours(0, 0, 0, 0) : null;
+
+                  if (!lastStudy) {
+                    // First time studying
+                    user.currentStreak = 1;
+                  } else if (today > lastStudy) {
+                    // Studied on a different day
+                    const oneDayAgo = today - (24 * 60 * 60 * 1000);
+                    if (lastStudy === oneDayAgo) {
+                      // Yesterday - continue streak
+                      user.currentStreak += 1;
+                    } else {
+                      // Missed days - reset streak
+                      user.currentStreak = 1;
+                    }
+                  }
+                  // If studying same day, don't change streak
+
+                  user.lastStudyDate = new Date();
+                  await user.save();
+                }
+              }
+
+              // Notify participants of their progress
+              io.to(roomId).emit("systemMessage", sanitizeMessage(`Study session completed! +${studyMinutes} minutes logged`));
+            } catch (err) {
+              console.error("[SOCKET] Error updating user stats:", err);
+            }
+
             room.timer.phase = "Break Time";
             room.timer.timeLeft = (room.breakInterval || 5) * 60;
           } else {
+            // Break ended
             room.timer.phase = "Study Time";
             room.timer.timeLeft = (room.studyInterval || 25) * 60;
             if (room.currentSession < room.totalSessions) room.currentSession++;
           }
+
           io.to(roomId).emit("sessionUpdate", {
             currentSession: room.currentSession,
             totalSessions: room.totalSessions

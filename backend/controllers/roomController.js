@@ -7,8 +7,8 @@ exports.createRoom = async (req, res) => {
 
     // Validate room code for private rooms
     if (privacy === "private" && (!code || code.trim() === "")) {
-      return res.status(400).json({ 
-        message: "Room code is required for private rooms" 
+      return res.status(400).json({
+        message: "Room code is required for private rooms"
       });
     }
 
@@ -31,7 +31,7 @@ exports.createRoom = async (req, res) => {
       roomId: room._id,
       message: "Room created successfully"
     });
-    
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server Error" });
@@ -49,7 +49,7 @@ exports.getRooms = async (req, res) => {
 
     // Only show public active rooms in main listing
     const publicRooms = allActiveRooms.filter(r => r.privacy === "public");
-    
+
     // User's rooms (both public and private, any status)
     const myRooms = await Room.find({
       $or: [
@@ -63,9 +63,12 @@ exports.getRooms = async (req, res) => {
 
     res.json({
       username: req.user.username,
+      sessions: req.user.totalSessions || 0,
+      streak: req.user.currentStreak || 0,
+      timeStudied: req.user.totalMinutesStudied || 0,
       publicRooms,
       myRooms,
-      rooms: allActiveRooms // All active rooms for search
+      rooms: allActiveRooms
     });
   } catch (err) {
     console.error(err);
@@ -85,11 +88,11 @@ exports.getRoomById = async (req, res) => {
       const isParticipant = room.participants.some(
         p => p._id.toString() === req.user._id.toString()
       );
-      
+
       const isCreator = room.creator.toString() === req.user._id.toString();
 
       if (!isParticipant && !isCreator) {
-        return res.status(403).json({ 
+        return res.status(403).json({
           message: "Access denied",
           isPrivate: true  // Let client know it's private
         });
@@ -111,7 +114,7 @@ exports.getRoomById = async (req, res) => {
 exports.verifyRoomAccess = async (roomId, userId, roomCode = null) => {
   try {
     const room = await Room.findById(roomId);
-    
+
     if (!room) {
       return { success: false, reason: "Room not found" };
     }
@@ -123,7 +126,7 @@ exports.verifyRoomAccess = async (roomId, userId, roomCode = null) => {
 
     // Private rooms - check creator or code
     const isCreator = room.creator.toString() === userId.toString();
-    
+
     if (isCreator) {
       return { success: true, room };
     }
@@ -140,7 +143,7 @@ exports.verifyRoomAccess = async (roomId, userId, roomCode = null) => {
     }
 
     return { success: true, room };
-    
+
   } catch (err) {
     console.error("verifyRoomAccess error:", err);
     return { success: false, reason: "Server error" };

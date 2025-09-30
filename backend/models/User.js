@@ -42,6 +42,23 @@ const userSchema = new mongoose.Schema(
     lastLogin: {
       type: Date,
     },
+    // Study tracking
+    totalSessions: {
+      type: Number,
+      default: 0
+    },
+    totalMinutesStudied: {
+      type: Number,
+      default: 0
+    },
+    currentStreak: {
+      type: Number,
+      default: 0
+    },
+    lastStudyDate: {
+      type: Date,
+      default: null
+    }
   },
   { timestamps: true } // adds createdAt & updatedAt
 );

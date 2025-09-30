@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Fetch dashboard data
   const fetchDashboard = async () => {
     try {
-      const res = await fetch("/api/rooms", {
+      const res = await fetch("https://studymate-nkce.onrender.com/api/rooms", {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       allRooms = data.rooms || [];
       myRooms = data.myRooms || [];
       publicRooms = data.publicRooms || [];
-      
+
       renderDashboard(data);
 
     } catch (err) {
@@ -60,7 +60,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const renderMyRooms = (rooms) => {
     const myRoomsSection = document.getElementById("myRoomsSection");
     const myRoomsList = document.getElementById("myRoomsList");
-    
+
     if (!rooms || rooms.length === 0) {
       myRoomsSection.style.display = "none";
       return;
@@ -78,7 +78,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Render public rooms or search results
   const renderPublicRooms = (rooms) => {
     const publicRoomsList = document.getElementById("publicRoomsList");
-    
+
     if (!rooms || rooms.length === 0) {
       publicRoomsList.innerHTML = `
         <div class="empty-state">
@@ -128,8 +128,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const createRoomElement = (room) => {
     const div = document.createElement("div");
     div.className = "room-item";
-    
-    const privacyBadge = room.privacy === "private" 
+
+    const privacyBadge = room.privacy === "private"
       ? '<span class="room-badge badge-private">🔒 Private</span>'
       : '<span class="room-badge badge-public">🌍 Public</span>';
 
@@ -149,12 +149,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         ${room.status === "active" ? "Join" : "View"}
       </button>
     `;
-    
+
     // Add click listener
     div.querySelector(".join-btn").addEventListener("click", () => {
       window.location.href = `/room.html?id=${room._id}`;
     });
-    
+
     return div;
   };
 
@@ -164,9 +164,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   searchInput.addEventListener("input", (e) => {
     clearTimeout(searchTimeout);
-    
+
     const query = e.target.value.trim().toLowerCase();
-    
+
     if (!query) {
       // If search is empty, hide search results
       document.getElementById("searchResultsSection").style.display = "none";
@@ -175,11 +175,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Debounce search
     searchTimeout = setTimeout(() => {
-      const results = allRooms.filter(room => 
+      const results = allRooms.filter(room =>
         room.name.toLowerCase().includes(query) ||
         room.creator?.username?.toLowerCase().includes(query)
       );
-      
+
       renderSearchResults(results);
     }, 300);
   });
