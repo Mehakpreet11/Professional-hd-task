@@ -69,7 +69,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function connectSocket(token) {
     let isAdmin = false;
-    socket = io({ auth: { token } });
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000";
+    socket = io(socketUrl, { auth: { token } });
 
     socket.on("connect", () => {
       // First, check if we can access this room
