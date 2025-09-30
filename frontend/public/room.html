@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,39 +23,113 @@
       overflow: hidden;
     }
 
-    /* Header */
+    /* Header - Redesigned */
     .room-header {
-      background: white;
-      padding: 1rem;
+      background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
+      padding: 1rem 1.5rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
       flex-shrink: 0;
-      gap: 0.5rem;
-      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .room-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .room-icon {
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    .room-details {
+      flex: 1;
+      min-width: 0;
     }
 
     .room-info h1 {
       margin: 0;
-      font-size: 1.25rem;
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: white;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .room-status {
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.8);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .status-indicator {
+      width: 8px;
+      height: 8px;
+      background: #10B981;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
     }
 
     .header-actions {
       display: flex;
       gap: 0.5rem;
       align-items: center;
-      flex-wrap: wrap;
+    }
+
+    .header-btn {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .header-btn:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: translateY(-1px);
+    }
+
+    .header-btn i {
+      font-size: 1rem;
     }
 
     .leave-btn {
-      background: #DC2626;
-      color: white;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.875rem;
+      background: rgba(220, 38, 38, 0.9);
+      border: 1px solid rgba(220, 38, 38, 1);
+    }
+
+    .leave-btn:hover {
+      background: rgba(185, 28, 28, 1);
     }
 
     /* Main Layout */
@@ -70,13 +143,47 @@
     }
 
     .flash {
-      transform: scale(1.2);
+      transform: scale(1.1);
       transition: transform 0.2s;
+    }
+
+    /* Loading Overlay */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      backdrop-filter: blur(5px);
+    }
+
+    .loading-content {
+      text-align: center;
+      color: white;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
 
     /* Participants Column */
     .participants-section {
-      width: 200px;
+      width: 220px;
       background: white;
       border-radius: 12px;
       padding: 1rem;
@@ -84,26 +191,56 @@
       border: 1px solid #E2E8F0;
       display: flex;
       flex-direction: column;
-      overflow-y: auto;
+      overflow: hidden;
     }
 
-    .participants-section h5 {
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 0.75rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid #E2E8F0;
+    }
+
+    .section-title {
       font-weight: 600;
       color: #1E3A8A;
       font-size: 0.95rem;
     }
 
+    .participant-count {
+      background: #E0F2FE;
+      color: #1E3A8A;
+      padding: 0.125rem 0.5rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .participants-list {
+      flex: 1;
+      overflow-y: auto;
+    }
+
     .participant {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.5rem;
+      gap: 0.625rem;
+      margin-bottom: 0.625rem;
+      padding: 0.5rem;
+      border-radius: 8px;
+      transition: background 0.2s;
+      position: relative;
+    }
+
+    .participant:hover {
+      background: #F8FAFC;
     }
 
     .participant-avatar {
-      width: 28px;
-      height: 28px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       background: #3B82F6;
       color: white;
@@ -111,15 +248,65 @@
       align-items: center;
       justify-content: center;
       font-weight: 600;
-      font-size: 0.75rem;
+      font-size: 0.8rem;
       flex-shrink: 0;
+      position: relative;
+    }
+
+    .status-dot {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 10px;
+      height: 10px;
+      background: #10B981;
+      border: 2px solid white;
+      border-radius: 50%;
+    }
+
+    .participant-info {
+      flex: 1;
+      min-width: 0;
     }
 
     .participant-name {
-      font-size: 0.85rem;
+      font-size: 0.875rem;
+      font-weight: 500;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      color: #1E293B;
+    }
+
+    .participant-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.7rem;
+      color: #F59E0B;
+      margin-top: 0.125rem;
+    }
+
+    .admin-star {
+      color: #F59E0B;
+      font-size: 0.875rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: #94A3B8;
+    }
+
+    .empty-state i {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      opacity: 0.5;
+    }
+
+    .empty-state p {
+      font-size: 0.875rem;
+      margin: 0;
     }
 
     /* Timer Column */
@@ -136,78 +323,111 @@
       justify-content: center;
       background: white;
       border-radius: 12px;
-      padding: 1rem;
+      padding: 2rem 1rem;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       border: 1px solid #E2E8F0;
       min-width: 0;
     }
 
     .session-tab {
-      background: #E0F2FE;
+      background: linear-gradient(135deg, #E0F2FE, #DBEAFE);
       color: #1E3A8A;
       font-weight: 600;
-      padding: 0.25rem 0.75rem;
-      border-radius: 12px;
-      margin-bottom: 1rem;
-      font-size: 0.85rem;
+      padding: 0.375rem 1rem;
+      border-radius: 20px;
+      margin-bottom: 1.5rem;
+      font-size: 0.875rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
 
     .timer-circle {
-      width: min(250px, 70vw);
-      height: min(250px, 70vw);
-      max-width: 300px;
-      max-height: 300px;
+      width: min(280px, 70vw);
+      height: min(280px, 70vw);
+      max-width: 320px;
+      max-height: 320px;
       border-radius: 50%;
       background: linear-gradient(135deg, #1E3A8A, #3B82F6);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      margin-bottom: 1rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 8px 16px rgba(30, 58, 138, 0.3);
+      position: relative;
+    }
+
+    .timer-circle::before {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3B82F6, #1E3A8A);
+      z-index: -1;
+      opacity: 0.5;
+      filter: blur(10px);
     }
 
     .timer-display {
       color: white;
       font-family: 'JetBrains Mono', monospace;
-      font-size: clamp(2rem, 8vw, 3rem);
+      font-size: clamp(2.5rem, 8vw, 3.5rem);
       font-weight: 700;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     }
 
     .phase-indicator {
-      color: rgba(255, 255, 255, 0.8);
-      font-size: clamp(0.85rem, 3vw, 1rem);
+      color: rgba(255, 255, 255, 0.9);
+      font-size: clamp(0.9rem, 3vw, 1.1rem);
+      font-weight: 500;
+      margin-top: 0.5rem;
     }
 
     .timer-controls {
       display: flex;
-      gap: 0.75rem;
+      gap: 1rem;
       align-items: center;
     }
 
     .control-btn {
-      width: 45px;
-      height: 45px;
+      width: 48px;
+      height: 48px;
       border-radius: 50%;
       border: none;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.1rem;
+      font-size: 1.2rem;
       background: #E2E8F0;
+      color: #64748B;
+      transition: all 0.2s;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .control-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .control-btn:active:not(:disabled) {
+      transform: translateY(0);
     }
 
     .play-btn {
-      background: #059669;
+      background: linear-gradient(135deg, #059669, #10B981);
       color: white;
-      width: 60px;
-      height: 60px;
-      font-size: 1.4rem;
+      width: 64px;
+      height: 64px;
+      font-size: 1.5rem;
     }
 
-    /* Chat Section */
+    .play-btn:hover:not(:disabled) {
+      background: linear-gradient(135deg, #047857, #059669);
+    }
+
+    /* Chat Section - Enhanced */
     .chat-section {
-      width: 320px;
+      width: 340px;
       display: flex;
       flex-direction: column;
       background: white;
@@ -218,17 +438,66 @@
       min-height: 0;
     }
 
+    .chat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid #E2E8F0;
+    }
+
     .chat-messages {
       flex: 1;
       overflow-y: auto;
       padding: 0.5rem 0;
       min-height: 0;
+      position: relative;
     }
 
+    .scroll-to-bottom {
+      position: absolute;
+      bottom: 0.5rem;
+      right: 0.5rem;
+      background: #3B82F6;
+      color: white;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      z-index: 10;
+    }
+
+    .scroll-to-bottom.show {
+      display: flex;
+    }
+
+    /* Message Styles - User messages on right */
     .message {
       display: flex;
       gap: 0.5rem;
       margin-bottom: 0.75rem;
+      animation: fadeIn 0.3s;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .message.own-message {
+      flex-direction: row-reverse;
     }
 
     .message-avatar {
@@ -247,14 +516,26 @@
     .message-content {
       flex: 1;
       min-width: 0;
+      max-width: 75%;
+    }
+
+    .message.own-message .message-content {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
     }
 
     .message-header {
       display: flex;
-      justify-content: space-between;
+      gap: 0.5rem;
+      align-items: center;
       font-size: 0.7rem;
       margin-bottom: 0.25rem;
       color: #64748B;
+    }
+
+    .message.own-message .message-header {
+      flex-direction: row-reverse;
     }
 
     .message-sender {
@@ -269,57 +550,127 @@
 
     .message-text {
       background: #F1F5F9;
-      padding: 0.5rem;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      line-height: 1.4;
+      padding: 0.625rem 0.875rem;
+      border-radius: 12px;
+      font-size: 0.875rem;
+      line-height: 1.5;
       word-break: break-word;
+    }
+
+    .message.own-message .message-text {
+      background: linear-gradient(135deg, #059669, #10B981);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message:not(.own-message) .message-text {
+      border-bottom-left-radius: 4px;
     }
 
     .system-message {
       text-align: center;
       font-size: 0.75rem;
       color: #94A3B8;
-      margin: 0.5rem 0;
+      margin: 0.75rem 0;
+      padding: 0.5rem;
+      background: #F8FAFC;
+      border-radius: 8px;
+      animation: fadeIn 0.3s;
     }
 
     .blocked-message {
       color: #b91c1c;
-      font-style: italic;
       background-color: #fee2e2;
-      padding: 4px 8px;
-      border-radius: 4px;
-      margin: 4px 0;
+    }
+
+    .typing-indicator {
+      display: none;
+      padding: 0.5rem;
+      color: #64748B;
+      font-size: 0.8rem;
+      font-style: italic;
+    }
+
+    .typing-indicator.show {
+      display: block;
     }
 
     .chat-input {
       display: flex;
       gap: 0.5rem;
-      padding-top: 0.5rem;
+      padding-top: 0.75rem;
       flex-shrink: 0;
+      border-top: 1px solid #E2E8F0;
     }
 
     .message-input {
       flex: 1;
-      padding: 0.5rem;
-      border-radius: 6px;
+      padding: 0.625rem 0.875rem;
+      border-radius: 8px;
       border: 1px solid #E2E8F0;
       resize: none;
       font-size: 0.875rem;
+      transition: border-color 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .message-input:focus {
+      outline: none;
+      border-color: #3B82F6;
     }
 
     .send-btn {
-      background: #1E3A8A;
+      background: linear-gradient(135deg, #1E3A8A, #3B82F6);
       color: white;
       border: none;
-      padding: 0 1rem;
-      border-radius: 6px;
+      padding: 0 1.25rem;
+      border-radius: 8px;
       cursor: pointer;
       font-size: 0.875rem;
+      font-weight: 500;
       flex-shrink: 0;
+      transition: all 0.2s;
     }
 
-    /* Modal Styles */
+    .send-btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(30, 58, 138, 0.3);
+    }
+
+    .send-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Modal Improvements */
+    .modal-content {
+      border-radius: 16px;
+      border: none;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-header {
+      background: linear-gradient(135deg, #1E3A8A, #3B82F6);
+      color: white;
+      border-radius: 16px 16px 0 0;
+      padding: 1.25rem 1.5rem;
+      border: none;
+    }
+
+    .modal-title {
+      font-weight: 600;
+      font-size: 1.125rem;
+    }
+
+    .btn-close {
+      filter: brightness(0) invert(1);
+      opacity: 0.8;
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+    }
+
     .settings-section {
       margin-bottom: 1.5rem;
     }
@@ -329,6 +680,9 @@
       margin-bottom: 1rem;
       color: #1E3A8A;
       font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     .info-grid {
@@ -341,8 +695,10 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      flex-wrap: wrap;
-      gap: 0.5rem;
+      padding: 0.75rem;
+      background: #F8FAFC;
+      border-radius: 8px;
+      gap: 1rem;
     }
 
     .info-label {
@@ -355,14 +711,16 @@
       font-weight: 600;
       color: #1E3A8A;
       font-size: 0.85rem;
+      text-align: right;
     }
 
     .info-value code {
-      background: #F1F5F9;
+      background: #E0F2FE;
       padding: 0.25rem 0.5rem;
       border-radius: 4px;
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.8rem;
+      color: #1E3A8A;
     }
 
     .admin-note {
@@ -370,6 +728,10 @@
       color: #64748B;
       font-style: italic;
       margin-bottom: 1rem;
+      padding: 0.75rem;
+      background: #FEF3C7;
+      border-left: 3px solid #F59E0B;
+      border-radius: 4px;
     }
 
     .control-group {
@@ -381,45 +743,53 @@
       font-weight: 500;
       margin-bottom: 0.5rem;
       font-size: 0.85rem;
+      color: #1E293B;
     }
 
     .danger-zone {
       border: 2px solid #FEE2E2;
-      padding: 1rem;
-      border-radius: 8px;
+      padding: 1.25rem;
+      border-radius: 12px;
       background: #FEF2F2;
     }
 
     .participants-manage {
-      max-height: 200px;
+      max-height: 220px;
       overflow-y: auto;
       border: 1px solid #E2E8F0;
       border-radius: 8px;
-      padding: 0.5rem;
+      padding: 0.75rem;
+      background: #F8FAFC;
     }
 
     .participant-manage-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0.5rem;
+      padding: 0.625rem;
       margin-bottom: 0.5rem;
-      background: #F8FAFC;
-      border-radius: 6px;
+      background: white;
+      border-radius: 8px;
       gap: 0.5rem;
+      border: 1px solid #E2E8F0;
+      transition: all 0.2s;
+    }
+
+    .participant-manage-item:hover {
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
 
     .participant-manage-info {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.625rem;
       flex: 1;
       min-width: 0;
     }
 
     .participant-manage-avatar {
-      width: 28px;
-      height: 28px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       background: #3B82F6;
       color: white;
@@ -427,12 +797,12 @@
       align-items: center;
       justify-content: center;
       font-weight: 600;
-      font-size: 0.75rem;
+      font-size: 0.8rem;
       flex-shrink: 0;
     }
 
     .participant-manage-name {
-      font-size: 0.85rem;
+      font-size: 0.875rem;
       font-weight: 500;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -443,15 +813,18 @@
       background: #DC2626;
       color: white;
       border: none;
-      padding: 0.25rem 0.75rem;
-      border-radius: 4px;
+      padding: 0.375rem 0.875rem;
+      border-radius: 6px;
       font-size: 0.75rem;
       cursor: pointer;
       flex-shrink: 0;
+      font-weight: 500;
+      transition: all 0.2s;
     }
 
     .kick-btn:hover {
       background: #B91C1C;
+      transform: translateY(-1px);
     }
 
     /* Responsive Design */
@@ -464,31 +837,41 @@
       .participants-section,
       .chat-section {
         width: 100%;
-        max-height: 250px;
+        max-height: 280px;
       }
 
       .timer-section {
         order: -1;
+        padding: 1.5rem 1rem;
       }
     }
 
     @media (max-width: 768px) {
       .room-header {
-        padding: 0.75rem;
+        padding: 0.875rem 1rem;
+      }
+
+      .room-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 1.125rem;
       }
 
       .room-info h1 {
-        font-size: 1.1rem;
+        font-size: 1rem;
       }
 
-      .header-actions {
-        width: 100%;
-        justify-content: flex-end;
-      }
-
-      .header-actions button {
-        font-size: 0.8rem;
+      .header-btn {
         padding: 0.4rem 0.75rem;
+        font-size: 0.8rem;
+      }
+
+      .header-btn span {
+        display: none;
+      }
+
+      .header-btn i {
+        margin: 0;
       }
 
       .main-content {
@@ -498,12 +881,44 @@
 
       .participants-section,
       .chat-section {
-        max-height: 200px;
+        max-height: 240px;
       }
 
       .timer-circle {
-        width: min(200px, 60vw);
-        height: min(200px, 60vw);
+        width: min(220px, 60vw);
+        height: min(220px, 60vw);
+      }
+
+      .control-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 1.1rem;
+      }
+
+      .play-btn {
+        width: 58px;
+        height: 58px;
+        font-size: 1.4rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .room-header {
+        padding: 0.75rem;
+      }
+
+      .header-actions {
+        gap: 0.375rem;
+      }
+
+      .timer-circle {
+        width: min(200px, 55vw);
+        height: min(200px, 55vw);
+      }
+
+      .session-tab {
+        font-size: 0.8rem;
+        padding: 0.3rem 0.75rem;
       }
 
       .control-btn {
@@ -513,88 +928,35 @@
       }
 
       .play-btn {
-        width: 55px;
-        height: 55px;
+        width: 54px;
+        height: 54px;
         font-size: 1.3rem;
-      }
-
-      .message-input {
-        font-size: 0.8rem;
-      }
-
-      .send-btn {
-        padding: 0 0.75rem;
-        font-size: 0.8rem;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .room-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.75rem;
-      }
-
-      .header-actions {
-        width: 100%;
-        justify-content: space-between;
-      }
-
-      .room-info h1 {
-        font-size: 1rem;
-      }
-
-      .timer-circle {
-        width: min(180px, 55vw);
-        height: min(180px, 55vw);
-      }
-
-      .session-tab {
-        font-size: 0.75rem;
-        padding: 0.2rem 0.6rem;
-      }
-
-      .control-btn {
-        width: 36px;
-        height: 36px;
-        font-size: 0.9rem;
-      }
-
-      .play-btn {
-        width: 50px;
-        height: 50px;
-        font-size: 1.2rem;
-      }
-
-      .participant-name,
-      .message-text {
-        font-size: 0.8rem;
       }
     }
 
     /* Scrollbar Styling */
     .chat-messages::-webkit-scrollbar,
-    .participants-section::-webkit-scrollbar,
+    .participants-list::-webkit-scrollbar,
     .participants-manage::-webkit-scrollbar {
       width: 6px;
     }
 
     .chat-messages::-webkit-scrollbar-track,
-    .participants-section::-webkit-scrollbar-track,
+    .participants-list::-webkit-scrollbar-track,
     .participants-manage::-webkit-scrollbar-track {
       background: #F1F5F9;
       border-radius: 10px;
     }
 
     .chat-messages::-webkit-scrollbar-thumb,
-    .participants-section::-webkit-scrollbar-thumb,
+    .participants-list::-webkit-scrollbar-thumb,
     .participants-manage::-webkit-scrollbar-thumb {
       background: #CBD5E1;
       border-radius: 10px;
     }
 
     .chat-messages::-webkit-scrollbar-thumb:hover,
-    .participants-section::-webkit-scrollbar-thumb:hover,
+    .participants-list::-webkit-scrollbar-thumb:hover,
     .participants-manage::-webkit-scrollbar-thumb:hover {
       background: #94A3B8;
     }
@@ -602,19 +964,41 @@
 </head>
 
 <body>
-  <!-- Room Header -->
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-content">
+      <div class="spinner"></div>
+      <p>Connecting to room...</p>
+    </div>
+  </div>
+
+  <!-- Room Header - Redesigned -->
   <header class="room-header">
     <div class="room-info">
-      <h1 id="roomName">Room Name</h1>
+      <div class="room-icon">
+        <i class="bi bi-book"></i>
+      </div>
+      <div class="room-details">
+        <h1 id="roomName">Room Name</h1>
+        <div class="room-status">
+          <span class="status-indicator"></span>
+          <span>Connected</span>
+        </div>
+      </div>
     </div>
     <div class="header-actions">
-      <button id="settingsBtn" class="btn btn-outline-primary btn-sm">
-        <i class="bi bi-gear"></i> <span class="d-none d-sm-inline">Settings</span>
+      <button class="header-btn" id="settingsBtn">
+        <i class="bi bi-gear"></i>
+        <span>Settings</span>
       </button>
-      <button id="copyLinkBtn" class="btn btn-outline-primary btn-sm">
-        <i class="bi bi-clipboard"></i> <span class="d-none d-sm-inline">Copy Link</span>
+      <button class="header-btn" id="copyLinkBtn">
+        <i class="bi bi-clipboard"></i>
+        <span>Copy Link</span>
       </button>
-      <button class="leave-btn" id="leaveBtn">Leave</button>
+      <button class="header-btn leave-btn" id="leaveBtn">
+        <i class="bi bi-box-arrow-right"></i>
+        <span>Leave</span>
+      </button>
     </div>
   </header>
 
@@ -622,8 +1006,16 @@
   <main class="main-content">
     <!-- Participants Column -->
     <section class="participants-section">
-      <h5>Participants</h5>
-      <div id="participantsList"></div>
+      <div class="section-header">
+        <h5 class="section-title">Participants</h5>
+        <span class="participant-count" id="participantCount">0</span>
+      </div>
+      <div class="participants-list" id="participantsList">
+        <div class="empty-state">
+          <i class="bi bi-people"></i>
+          <p>No participants yet</p>
+        </div>
+      </div>
     </section>
 
     <!-- Timer Column -->
@@ -645,7 +1037,19 @@
 
     <!-- Chat Column -->
     <section class="chat-section">
-      <div class="chat-messages" id="chatMessages"></div>
+      <div class="chat-header">
+        <h5 class="section-title">Chat</h5>
+      </div>
+      <div class="chat-messages" id="chatMessages">
+        <div class="empty-state">
+          <i class="bi bi-chat-dots"></i>
+          <p>No messages yet</p>
+        </div>
+      </div>
+      <div class="typing-indicator" id="typingIndicator">Someone is typing...</div>
+      <button class="scroll-to-bottom" id="scrollToBottom">
+        <i class="bi bi-arrow-down"></i>
+      </button>
       <div class="chat-input">
         <textarea id="messageInput" class="message-input" placeholder="Type a message..." rows="1"></textarea>
         <button class="send-btn" id="sendBtn">Send</button>
@@ -658,14 +1062,16 @@
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">⚙️ Room Settings</h5>
+          <h5 class="modal-title">Room Settings</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
           
           <!-- Room Info Section -->
           <div class="settings-section">
-            <h6 class="section-title">📋 Room Information</h6>
+            <h6 class="section-title">
+              <i class="bi bi-info-circle"></i> Room Information
+            </h6>
             <div class="info-grid">
               <div class="info-item">
                 <span class="info-label">Room Name:</span>
@@ -687,7 +1093,9 @@
                 <span class="info-label">Room Code:</span>
                 <span class="info-value">
                   <code id="modalRoomCode">-</code>
-                  <button class="btn btn-sm btn-outline-secondary ms-2" id="copyCodeBtn">📋</button>
+                  <button class="btn btn-sm btn-outline-secondary ms-2" id="copyCodeBtn">
+                    <i class="bi bi-clipboard"></i>
+                  </button>
                 </span>
               </div>
               <div class="info-item">
@@ -705,12 +1113,18 @@
 
           <!-- Room Controls Section (Admin Only) -->
           <div class="settings-section">
-            <h6 class="section-title">🎛️ Room Controls</h6>
-            <p class="admin-note">Only the room admin can modify these settings.</p>
+            <h6 class="section-title">
+              <i class="bi bi-sliders"></i> Room Controls
+            </h6>
+            <p class="admin-note">
+              <i class="bi bi-shield-check"></i> Only the room admin can modify these settings.
+            </p>
 
             <!-- Edit Room Name -->
             <div class="control-group">
-              <label class="control-label">🏷️ Room Name</label>
+              <label class="control-label">
+                <i class="bi bi-tag"></i> Room Name
+              </label>
               <div class="input-group mb-2">
                 <input type="text" class="form-control" id="editRoomName" placeholder="New room name">
                 <button class="btn btn-primary" id="saveRoomNameBtn" disabled>Save</button>
@@ -719,7 +1133,9 @@
 
             <!-- Edit Timer Intervals -->
             <div class="control-group">
-              <label class="control-label">⏱️ Timer Intervals</label>
+              <label class="control-label">
+                <i class="bi bi-clock"></i> Timer Intervals
+              </label>
               <div class="row g-2 mb-2">
                 <div class="col-6">
                   <label class="form-label small">Study (minutes)</label>
@@ -735,7 +1151,9 @@
 
             <!-- Change Password (Private Rooms Only) -->
             <div class="control-group" id="changePasswordGroup" style="display: none;">
-              <label class="control-label">🔑 Change Room Password</label>
+              <label class="control-label">
+                <i class="bi bi-key"></i> Change Room Password
+              </label>
               <div class="input-group mb-2">
                 <input type="text" class="form-control" id="newPassword" placeholder="New password" disabled>
                 <button class="btn btn-primary" id="savePasswordBtn" disabled>Change</button>
@@ -744,17 +1162,23 @@
 
             <!-- Manage Participants -->
             <div class="control-group">
-              <label class="control-label">👥 Manage Participants</label>
+              <label class="control-label">
+                <i class="bi bi-people"></i> Manage Participants
+              </label>
               <div class="participants-manage" id="participantsManage">
-                <!-- Dynamically populated -->
+                <div class="text-center text-muted py-3">
+                  <small>No participants</small>
+                </div>
               </div>
             </div>
 
             <!-- End Room (Danger Zone) -->
             <div class="control-group danger-zone">
-              <label class="control-label text-danger">🔴 Danger Zone</label>
+              <label class="control-label text-danger">
+                <i class="bi bi-exclamation-triangle"></i> Danger Zone
+              </label>
               <button class="btn btn-danger w-100" id="endRoomBtn" disabled>End Room</button>
-              <small class="text-muted d-block mt-1">This will end the session and kick all participants.</small>
+              <small class="text-muted d-block mt-2">This will end the session and kick all participants.</small>
             </div>
           </div>
 
@@ -765,8 +1189,8 @@
 
   <!-- Scripts -->
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-  <script src="./js/room.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+  <script src="./js/room.js" >
+  </script>
 </body>
-
 </html>

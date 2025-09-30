@@ -10,11 +10,13 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentUserId = null;
   let socket;
 
+  const loadingOverlay = document.getElementById("loadingOverlay");
   const messagesEl = document.getElementById("chatMessages");
   const messageInput = document.getElementById("messageInput");
   const sendBtn = document.getElementById("sendBtn");
   const participantsEl = document.getElementById("participantsList");
-  const participantsHeader = document.querySelector(".participants-section h5");
+  const participantCount = document.getElementById("participantCount");
+  const scrollToBottomBtn = document.getElementById("scrollToBottom");
 
   const timerDisplay = document.getElementById("timerDisplay");
   const phaseIndicator = document.getElementById("phaseIndicator");
@@ -26,6 +28,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const skipBtn = document.getElementById("skipBtn");
   const leaveBtn = document.getElementById("leaveBtn");
 
+  // Auto-hide loading overlay after connection
+  setTimeout(() => {
+    if (loadingOverlay) loadingOverlay.style.display = "none";
+  }, 2000);
+
+  // Scroll to bottom functionality
+  messagesEl.addEventListener("scroll", () => {
+    const isScrolledUp = messagesEl.scrollHeight - messagesEl.scrollTop > messagesEl.clientHeight + 100;
+    scrollToBottomBtn.classList.toggle("show", isScrolledUp);
+  });
+
+  scrollToBottomBtn.addEventListener("click", () => {
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  });
+
   // Copy link button
   const copyLinkBtn = document.getElementById("copyLinkBtn");
   if (copyLinkBtn) {
@@ -33,11 +50,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const roomUrl = window.location.href;
       navigator.clipboard.writeText(roomUrl)
         .then(() => {
-          const originalText = copyLinkBtn.textContent;
-          copyLinkBtn.textContent = "✓ Copied!";
-          copyLinkBtn.style.background = "#059669";
+          const originalHTML = copyLinkBtn.innerHTML;
+          copyLinkBtn.innerHTML = '<i class="bi bi-check"></i><span>Copied!</span>';
+          copyLinkBtn.style.background = "rgba(16, 185, 129, 0.9)";
           setTimeout(() => {
-            copyLinkBtn.textContent = originalText;
+            copyLinkBtn.innerHTML = originalHTML;
             copyLinkBtn.style.background = "";
           }, 2000);
         })
@@ -59,7 +76,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!token) return window.location.href = "/login.html";
 
     try {
-      // FIX: Use backend URL instead of relative path
       const res = await fetch(`${socketUrl}/api/auth/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -75,7 +91,18 @@ document.addEventListener("DOMContentLoaded", () => {
     socket = io(socketUrl, { auth: { token } });
 
     socket.on("connect", () => {
+      loadingOverlay.style.display = "none";
       socket.emit("checkRoomAccess", { roomId });
+    });
+
+    socket.on("disconnect", () => {
+      document.querySelector(".room-status span:last-child").textContent = "Disconnected";
+      document.querySelector(".status-indicator").style.background = "#EF4444";
+    });
+
+    socket.on("connect_error", () => {
+      loadingOverlay.style.display = "none";
+      alert("Connection error. Please refresh the page.");
     });
 
     addRoomManagementListeners();
@@ -113,20 +140,29 @@ document.addEventListener("DOMContentLoaded", () => {
     // Participants
     socket.on("participantsUpdate", ({ participants, adminId }) => {
       participantsEl.innerHTML = "";
-      participants.forEach(p => {
-        const div = document.createElement("div");
-        div.className = "participant";
-        const color = "#3B82F6";
-        const initial = p.username?.[0] || "?";
-        div.innerHTML = `
-          <div class="participant-avatar" style="background:${color}">${initial}</div>
-          <div class="participant-name">
-            ${p.username || "Unknown"}${p.socketId === socket.id ? " (You)" : ""}${p.socketId === adminId ? " ★" : ""}
-          </div>
-        `;
-        participantsEl.appendChild(div);
-      });
-      participantsHeader.textContent = `Participants (${participants.length})`;
+      if (participants.length === 0) {
+        participantsEl.innerHTML = '<div class="empty-state"><i class="bi bi-people"></i><p>No participants yet</p></div>';
+      } else {
+        participants.forEach(p => {
+          const div = document.createElement("div");
+          div.className = "participant";
+          const color = "#3B82F6";
+          const initial = p.username?.[0] || "?";
+          const isCurrentAdmin = p.socketId === adminId;
+          div.innerHTML = `
+            <div class="participant-avatar" style="background:${color}">
+              ${initial}
+              <div class="status-dot"></div>
+            </div>
+            <div class="participant-info">
+              <div class="participant-name">${p.username || "Unknown"}${p.socketId === socket.id ? " (You)" : ""}</div>
+              ${isCurrentAdmin ? '<div class="participant-badge"><i class="bi bi-star-fill admin-star"></i> Admin</div>' : ''}
+            </div>
+          `;
+          participantsEl.appendChild(div);
+        });
+      }
+      participantCount.textContent = participants.length;
       isAdmin = socket.id === adminId;
 
       if (roomData) {
@@ -151,16 +187,22 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     socket.on("newMessage", ({ username: sender, message }) => {
-      const color = sender === username ? "#059669" : "#3B82F6";
-      addUserMessage(sender, message, color, sender?.[0] || "?");
+      const isOwnMessage = sender === username;
+      const color = isOwnMessage ? "#059669" : "#3B82F6";
+      addUserMessage(sender, message, color, sender?.[0] || "?", isOwnMessage);
     });
 
     socket.on("loadMessages", messages => {
       messagesEl.innerHTML = "";
-      messages.forEach(m => {
-        const color = m.username === username ? "#059669" : "#3B82F6";
-        addUserMessage(m.username, m.message, color, m.username?.[0] || "?");
-      });
+      if (messages.length === 0) {
+        messagesEl.innerHTML = '<div class="empty-state"><i class="bi bi-chat-dots"></i><p>No messages yet</p></div>';
+      } else {
+        messages.forEach(m => {
+          const isOwnMessage = m.username === username;
+          const color = isOwnMessage ? "#059669" : "#3B82F6";
+          addUserMessage(m.username, m.message, color, m.username?.[0] || "?", isOwnMessage);
+        });
+      }
     });
 
     // Timer & sessions
@@ -194,9 +236,9 @@ document.addEventListener("DOMContentLoaded", () => {
     resetBtn?.addEventListener("click", () => { socket.emit("resetTimer", { roomId }); flashButton(resetBtn); });
   }
 
-  function addUserMessage(sender, text, color, initial) {
+  function addUserMessage(sender, text, color, initial, isOwn = false) {
     const div = document.createElement("div");
-    div.className = "message";
+    div.className = isOwn ? "message own-message" : "message";
     div.innerHTML = `
       <div class="message-avatar" style="background:${color}">${initial}</div>
       <div class="message-content">
@@ -251,7 +293,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("modalCreator").textContent = roomData.creatorUsername;
     document.getElementById("modalCreatedDate").textContent = new Date(roomData.createdAt).toLocaleDateString();
     document.getElementById("modalPrivacy").textContent = roomData.isPrivate ? "🔒 Private" : "🌍 Public";
-    document.getElementById("modalAdmin").textContent = roomData.adminUsername + " ★";
+    document.getElementById("modalAdmin").textContent = roomData.adminUsername + " ⭐";
     document.getElementById("modalTotalSessions").textContent = roomData.completedSessions || 0;
 
     if (isCreator && roomData.isPrivate) {
@@ -280,7 +322,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const container = document.getElementById("participantsManage");
     container.innerHTML = "";
     if (!roomData.participants?.length) {
-      container.innerHTML = '<p class="text-muted small">No participants</p>';
+      container.innerHTML = '<div class="text-center text-muted py-3"><small>No participants</small></div>';
       return;
     }
 
@@ -292,7 +334,7 @@ document.addEventListener("DOMContentLoaded", () => {
       div.innerHTML = `
         <div class="participant-manage-info">
           <div class="participant-manage-avatar" style="background: #3B82F6">${p.username?.[0] || "?"}</div>
-          <span class="participant-manage-name">${p.username}${isCurrentUser ? " (You)" : ""}${isCurrentAdmin ? " ★" : ""}</span>
+          <span class="participant-manage-name">${p.username}${isCurrentUser ? " (You)" : ""}${isCurrentAdmin ? " ⭐" : ""}</span>
         </div>
         ${!isCurrentUser && isAdmin ? `<button class="kick-btn" data-socket-id="${p.socketId}" data-username="${p.username}">Kick</button>` : ""}
       `;
@@ -315,9 +357,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const code = document.getElementById("modalRoomCode").textContent;
     navigator.clipboard.writeText(code).then(() => {
       const btn = document.getElementById("copyCodeBtn");
-      const original = btn.textContent;
-      btn.textContent = "✓";
-      setTimeout(() => btn.textContent = original, 1500);
+      const original = btn.innerHTML;
+      btn.innerHTML = '<i class="bi bi-check"></i>';
+      setTimeout(() => btn.innerHTML = original, 1500);
     });
   });
 
