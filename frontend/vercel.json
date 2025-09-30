@@ -10,6 +10,10 @@
     {
       "source": "/dashboard",
       "destination": "/dashboard.html"
+    },    
+    {
+      "source": "/api/:path*",
+      "destination": "https://studymate-nkce.onrender.com/api/:path*"
     }
   ]
 }
