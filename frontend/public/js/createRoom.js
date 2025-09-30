@@ -27,12 +27,21 @@ document.getElementById("createRoomForm").addEventListener("submit", async (e) =
     return;
   }
 
+  const privacy = document.getElementById("privacy").value;
+  const roomCode = document.getElementById("roomCode").value.trim();
+
+  // Validate that private rooms have a code
+  if (privacy === "private" && !roomCode) {
+    alert("Please enter a room code for private rooms.");
+    return;
+  }
+
   const roomData = {
     name: document.getElementById("roomName").value.trim(),
     studyInterval: parseInt(document.getElementById("studyInterval").value),
     breakInterval: parseInt(document.getElementById("breakInterval").value),
-    privacy: document.getElementById("privacy").value,
-    code: document.getElementById("roomCode").value.trim() || null
+    privacy: privacy,
+    code: roomCode || null
   };
 
   try {
@@ -47,9 +56,19 @@ document.getElementById("createRoomForm").addEventListener("submit", async (e) =
 
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Failed to create room");
-    console.log(data);
+    
+    console.log("Room created:", data);
+
+    // Get the room ID 
+    const roomId = data.roomId || data._id || data.id;
+
+    // IMPORTANT: Store room code in localStorage for creator (auto-join without prompt)
+    if (privacy === "private" && roomCode) {
+      localStorage.setItem(`roomCode_${roomId}`, roomCode);
+    }
+
     alert(`Room "${data.name}" created successfully!`);
-    window.location.href = `/room.html?id=${data.roomId}`;
+    window.location.href = `/room.html?id=${roomId}`;
 
   } catch (err) {
     console.error(err);

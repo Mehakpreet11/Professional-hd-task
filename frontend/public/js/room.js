@@ -46,11 +46,58 @@ document.addEventListener("DOMContentLoaded", () => {
   function connectSocket(token) {
     let isAdmin = false;
     socket = io({ auth: { token } });
+  
+    socket.on("connect", () => {
+      // First, check if we can access this room
+      socket.emit("checkRoomAccess", { roomId });
+    });
 
-    socket.on("connect", () => socket.emit("joinRoom", { roomId }));
-    socket.on("roomInfo", ({ roomName }) => {
+    // Handle room access info
+    socket.on("roomAccessInfo", ({ roomName, isPrivate, isCreator, requiresCode }) => {
       document.getElementById("roomName").textContent = roomName;
-    });    
+
+      let roomCode = null;
+
+      // If room requires code and user is not creator
+      if (requiresCode) {
+        // Check localStorage for saved code
+        const storageKey = `roomCode_${roomId}`;
+        roomCode = localStorage.getItem(storageKey);
+
+        // If no saved code, prompt user
+        if (!roomCode) {
+          roomCode = prompt("This is a private room. Enter the room code:");
+          
+          if (!roomCode) {
+            alert("Room code is required to join this room!");
+            window.location.href = "/dashboard.html";
+            return;
+          }
+          
+          // Save code to localStorage for future visits
+          localStorage.setItem(storageKey, roomCode);
+        }
+      }
+
+      // Attempt to join the room
+      socket.emit("joinRoom", { roomId, roomCode });
+    });
+
+    // Handle access denied
+    socket.on("roomAccessDenied", ({ reason }) => {
+      alert(reason || "Access denied!");
+      
+      // Clear any saved room code (it was wrong)
+      localStorage.removeItem(`roomCode_${roomId}`);
+      
+      // Redirect back to dashboard
+      window.location.href = "/dashboard.html";
+    });
+
+    // Handle successful join
+    socket.on("roomJoinSuccess", ({ roomName, roomId: joinedRoomId, isPrivate }) => {
+      console.log(`Successfully joined room: ${roomName}`);
+    });
 
     // Participants
     socket.on("participantsUpdate", ({ participants, adminId }) => {
@@ -69,13 +116,13 @@ document.addEventListener("DOMContentLoaded", () => {
         participantsEl.appendChild(div);
       });
       participantsHeader.textContent = `Participants (${participants.length})`;
-      isAdmin = socket.id === adminId; // Set admin status
-      // Enable/disable timer buttons
+      isAdmin = socket.id === adminId;
+      
+      // Enable/disable timer buttons based on admin status
       [playBtn, skipBtn, resetBtn].forEach(btn => {
         if (btn) btn.disabled = !isAdmin;
       });
     });
-    
 
     // Messages
     socket.on("systemMessage", text => {
@@ -99,7 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-    // Timer & session updates (merged)
+    // Timer & session updates
     socket.on("timerUpdate", timer => {
       const minutes = String(Math.floor(timer.timeLeft / 60)).padStart(2, "0");
       const seconds = String(timer.timeLeft % 60).padStart(2, "0");
@@ -113,12 +160,10 @@ document.addEventListener("DOMContentLoaded", () => {
       totalSessionsEl.textContent = totalSessions;
     });
 
-    // Show backend error messages (e.g., blocked messages)
+    // Show backend error messages
     socket.on("errorMessage", msg => {
-      // Optional: log to console
       console.warn("Socket error:", msg);
 
-      // Show as a temporary system message in chat
       const div = document.createElement("div");
       div.className = "system-message blocked-message";
       div.textContent = msg;
@@ -126,31 +171,41 @@ document.addEventListener("DOMContentLoaded", () => {
       messagesEl.scrollTop = messagesEl.scrollHeight;
     });
 
-
     // Timer controls
     const flashButton = btn => {
       btn.classList.add("flash");
       setTimeout(() => btn.classList.remove("flash"), 200);
     };
 
-    playBtn?.addEventListener("click", () => { socket.emit("toggleTimer", { roomId }); flashButton(playBtn); });
-    skipBtn?.addEventListener("click", () => { socket.emit("skipPhase", { roomId }); flashButton(skipBtn); });
-    resetBtn?.addEventListener("click", () => { socket.emit("resetTimer", { roomId }); flashButton(resetBtn); });
+    playBtn?.addEventListener("click", () => { 
+      socket.emit("toggleTimer", { roomId }); 
+      flashButton(playBtn); 
+    });
+    
+    skipBtn?.addEventListener("click", () => { 
+      socket.emit("skipPhase", { roomId }); 
+      flashButton(skipBtn); 
+    });
+    
+    resetBtn?.addEventListener("click", () => { 
+      socket.emit("resetTimer", { roomId }); 
+      flashButton(resetBtn); 
+    });
   }
 
   function addUserMessage(sender, text, color, initial) {
     const div = document.createElement("div");
     div.className = "message";
     div.innerHTML = `
-          <div class="message-avatar" style="background:${color}">${initial}</div>
-          <div class="message-content">
-              <div class="message-header">
-                  <span class="message-sender">${sender}</span>
-                  <span class="message-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-              </div>
-              <div class="message-text">${text}</div>
-          </div>
-      `;
+      <div class="message-avatar" style="background:${color}">${initial}</div>
+      <div class="message-content">
+        <div class="message-header">
+          <span class="message-sender">${sender}</span>
+          <span class="message-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+        </div>
+        <div class="message-text">${text}</div>
+      </div>
+    `;
     messagesEl.appendChild(div);
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
@@ -171,11 +226,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-//leave room
+  // Leave room
   leaveBtn?.addEventListener("click", () => {
     if (!socket) return;
-    socket.emit("leaveRoom", { roomId });  // Tell backend the user is leaving
-    window.location.href = "/dashboard.html";  // Redirect user after leaving
+    socket.emit("leaveRoom", { roomId });
+    window.location.href = "/dashboard.html";
   });
 
   fetchUserAndConnect();
