@@ -41,15 +41,31 @@ exports.createRoom = async (req, res) => {
 // Get all rooms (for dashboard listing)
 exports.getRooms = async (req, res) => {
   try {
-    const rooms = await Room.find({
-      $or: [{ privacy: "public" }, { participants: req.user._id }],
+    // Get all active rooms for search functionality
+    const allActiveRooms = await Room.find({ status: "active" })
+      .sort({ createdAt: -1 })
+      .populate("creator", "username")
+      .select("-code"); // NEVER send room codes to frontend
+
+    // Only show public active rooms in main listing
+    const publicRooms = allActiveRooms.filter(r => r.privacy === "public");
+    
+    // User's rooms (both public and private, any status)
+    const myRooms = await Room.find({
+      $or: [
+        { creator: req.user._id },
+        { participants: req.user._id }
+      ]
     })
       .sort({ createdAt: -1 })
-      .populate("creator", "username");
+      .populate("creator", "username")
+      .select("-code");
 
     res.json({
       username: req.user.username,
-      rooms,
+      publicRooms,
+      myRooms,
+      rooms: allActiveRooms // All active rooms for search
     });
   } catch (err) {
     console.error(err);

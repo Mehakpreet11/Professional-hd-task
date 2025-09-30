@@ -21,6 +21,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const leaveBtn = document.getElementById("leaveBtn");
 
+  // Add copy link button functionality
+  const copyLinkBtn = document.getElementById("copyLinkBtn");
+  if (copyLinkBtn) {
+    copyLinkBtn.addEventListener("click", () => {
+      const roomUrl = window.location.href;
+      navigator.clipboard.writeText(roomUrl).then(() => {
+        const originalText = copyLinkBtn.textContent;
+        copyLinkBtn.textContent = "✓ Copied!";
+        copyLinkBtn.style.background = "#059669";
+        setTimeout(() => {
+          copyLinkBtn.textContent = originalText;
+          copyLinkBtn.style.background = "";
+        }, 2000);
+      }).catch(err => {
+        console.error("Failed to copy:", err);
+        alert("Failed to copy link. Please copy manually: " + roomUrl);
+      });
+    });
+  }
+
   if (!roomId) {
     alert("Invalid room URL");
     window.location.href = "/dashboard.html";
