@@ -35,10 +35,10 @@ function initSocket(server) {
       try {
         // Fetch room from database (roomId is actually the MongoDB _id)
         const dbRoom = await Room.findById(roomId);
-        
+
         if (!dbRoom) {
-          return socket.emit("roomAccessDenied", { 
-            reason: "Room not found" 
+          return socket.emit("roomAccessDenied", {
+            reason: "Room not found"
           });
         }
 
@@ -55,8 +55,8 @@ function initSocket(server) {
         });
       } catch (err) {
         console.error("[SOCKET] checkRoomAccess error:", err);
-        socket.emit("roomAccessDenied", { 
-          reason: "Failed to check room access" 
+        socket.emit("roomAccessDenied", {
+          reason: "Failed to check room access"
         });
       }
     });
@@ -67,10 +67,10 @@ function initSocket(server) {
 
         // Use the controller's verification function
         const verification = await roomController.verifyRoomAccess(roomId, userId, roomCode);
-        
+
         if (!verification.success) {
-          return socket.emit("roomAccessDenied", { 
-            reason: verification.reason 
+          return socket.emit("roomAccessDenied", {
+            reason: verification.reason
           });
         }
 
@@ -83,10 +83,10 @@ function initSocket(server) {
             creatorId: dbRoom.creator.toString(),
             participants: [],
             adminId: null,
-            timer: { 
-              timeLeft: (dbRoom.studyInterval || 25) * 60, 
-              running: false, 
-              phase: "Study Time" 
+            timer: {
+              timeLeft: (dbRoom.studyInterval || 25) * 60,
+              running: false,
+              phase: "Study Time"
             },
             currentSession: 1,
             totalSessions: 4,
@@ -101,19 +101,19 @@ function initSocket(server) {
         socket.join(roomId);
 
         // Send room info
-        socket.emit("roomJoinSuccess", { 
-          roomName: dbRoom.name, 
-          roomId, 
-          isPrivate: room.isPrivate 
+        socket.emit("roomJoinSuccess", {
+          roomName: dbRoom.name,
+          roomId,
+          isPrivate: room.isPrivate
         });
 
         // Add participant
         const existing = room.participants.find(p => p.userId === userId);
         if (!existing) {
-          room.participants.push({ 
-            socketId: socket.id, 
-            userId: userId, 
-            username 
+          room.participants.push({
+            socketId: socket.id,
+            userId: userId,
+            username
           });
         } else {
           existing.socketId = socket.id;
@@ -128,9 +128,9 @@ function initSocket(server) {
         }
 
         // Update participants list
-        io.to(roomId).emit("participantsUpdate", { 
-          participants: room.participants, 
-          adminId: room.adminId 
+        io.to(roomId).emit("participantsUpdate", {
+          participants: room.participants,
+          adminId: room.adminId
         });
         io.to(roomId).emit("systemMessage", sanitizeMessage(`${username} joined the room`));
 
@@ -158,10 +158,10 @@ function initSocket(server) {
         }
 
         await Chat.create({ roomId, senderId: userId, message: cleanMessage });
-        io.to(roomId).emit("newMessage", { 
-          username, 
-          message: cleanMessage, 
-          createdAt: new Date() 
+        io.to(roomId).emit("newMessage", {
+          username,
+          message: cleanMessage,
+          createdAt: new Date()
         });
       } catch (err) {
         console.error("[SOCKET] sendMessage error:", err);
@@ -193,9 +193,9 @@ function initSocket(server) {
       room.timer.timeLeft = (room.studyInterval || 25) * 60;
       room.currentSession = 1;
       io.to(roomId).emit("timerUpdate", room.timer);
-      io.to(roomId).emit("sessionUpdate", { 
-        currentSession: room.currentSession, 
-        totalSessions: room.totalSessions 
+      io.to(roomId).emit("sessionUpdate", {
+        currentSession: room.currentSession,
+        totalSessions: room.totalSessions
       });
     });
 
@@ -216,12 +216,203 @@ function initSocket(server) {
         if (room.currentSession < room.totalSessions) room.currentSession++;
       }
       io.to(roomId).emit("timerUpdate", room.timer);
-      io.to(roomId).emit("sessionUpdate", { 
-        currentSession: room.currentSession, 
-        totalSessions: room.totalSessions 
+      io.to(roomId).emit("sessionUpdate", {
+        currentSession: room.currentSession,
+        totalSessions: room.totalSessions
       });
     });
 
+
+    // Send room data to client
+    socket.on("getRoomData", async ({ roomId }) => {
+      try {
+        const dbRoom = await Room.findById(roomId).populate("creator", "username");
+        if (!dbRoom) return socket.emit("errorMessage", "Room not found");
+
+        const room = rooms[roomId];
+        if (!room) return socket.emit("errorMessage", "Room not active");
+
+        const adminParticipant = room.participants.find(p => p.socketId === room.adminId);
+
+        socket.emit("roomData", {
+          name: dbRoom.name,
+          creatorUsername: dbRoom.creator.username,
+          isPrivate: dbRoom.privacy === "private",
+          code: dbRoom.code,
+          createdAt: dbRoom.createdAt,
+          studyInterval: dbRoom.studyInterval,
+          breakInterval: dbRoom.breakInterval,
+          participants: room.participants,
+          adminSocketId: room.adminId,
+          adminUsername: adminParticipant?.username || "Unknown",
+          isCreator: dbRoom.creator._id.toString() === userId.toString(),
+          currentUserId: userId,
+          completedSessions: 0 // You can add this to Room model if needed
+        });
+      } catch (err) {
+        console.error("[SOCKET] getRoomData error:", err);
+        socket.emit("errorMessage", "Failed to get room data");
+      }
+    });
+
+    // Update room name (admin only)
+    socket.on("updateRoomName", async ({ roomId, name }) => {
+      try {
+        const room = rooms[roomId];
+        if (!room) return socket.emit("errorMessage", "Room not found");
+
+        if (socket.id !== room.adminId) {
+          return socket.emit("errorMessage", "Only admin can change room name");
+        }
+
+        const dbRoom = await Room.findById(roomId);
+        if (!dbRoom) return socket.emit("errorMessage", "Room not found");
+
+        dbRoom.name = name.trim();
+        await dbRoom.save();
+
+        io.to(roomId).emit("roomNameUpdated", { name: dbRoom.name });
+        io.to(roomId).emit("systemMessage", sanitizeMessage(`Room name changed to "${dbRoom.name}"`));
+      } catch (err) {
+        console.error("[SOCKET] updateRoomName error:", err);
+        socket.emit("errorMessage", "Failed to update room name");
+      }
+    });
+
+    // Update timer intervals (admin only)
+    socket.on("updateTimerIntervals", async ({ roomId, studyInterval, breakInterval }) => {
+      try {
+        const room = rooms[roomId];
+        if (!room) return socket.emit("errorMessage", "Room not found");
+
+        if (socket.id !== room.adminId) {
+          return socket.emit("errorMessage", "Only admin can change timer intervals");
+        }
+
+        const dbRoom = await Room.findById(roomId);
+        if (!dbRoom) return socket.emit("errorMessage", "Room not found");
+
+        dbRoom.studyInterval = studyInterval;
+        dbRoom.breakInterval = breakInterval;
+        await dbRoom.save();
+
+        // Update in-memory room
+        room.studyInterval = studyInterval;
+        room.breakInterval = breakInterval;
+
+        io.to(roomId).emit("timerIntervalsUpdated", { studyInterval, breakInterval });
+        io.to(roomId).emit("systemMessage", sanitizeMessage(`Timer updated: ${studyInterval}min study / ${breakInterval}min break`));
+      } catch (err) {
+        console.error("[SOCKET] updateTimerIntervals error:", err);
+        socket.emit("errorMessage", "Failed to update timer intervals");
+      }
+    });
+
+    // Update room password (creator only, private rooms)
+    socket.on("updateRoomPassword", async ({ roomId, password }) => {
+      try {
+        const dbRoom = await Room.findById(roomId);
+        if (!dbRoom) return socket.emit("errorMessage", "Room not found");
+
+        // Only creator can change password
+        if (dbRoom.creator.toString() !== userId.toString()) {
+          return socket.emit("errorMessage", "Only room creator can change password");
+        }
+
+        if (dbRoom.privacy !== "private") {
+          return socket.emit("errorMessage", "Only private rooms have passwords");
+        }
+
+        dbRoom.code = password.trim();
+        await dbRoom.save();
+
+        socket.emit("roomPasswordUpdated", { code: password.trim() });
+        socket.emit("systemMessage", sanitizeMessage("Room password updated successfully"));
+      } catch (err) {
+        console.error("[SOCKET] updateRoomPassword error:", err);
+        socket.emit("errorMessage", "Failed to update password");
+      }
+    });
+
+    // Kick participant (admin only)
+    socket.on("kickParticipant", ({ roomId, socketId }) => {
+      try {
+        const room = rooms[roomId];
+        if (!room) return socket.emit("errorMessage", "Room not found");
+
+        if (socket.id !== room.adminId) {
+          return socket.emit("errorMessage", "Only admin can kick participants");
+        }
+
+        const participant = room.participants.find(p => p.socketId === socketId);
+        if (!participant) return socket.emit("errorMessage", "Participant not found");
+
+        // Can't kick yourself
+        if (socketId === socket.id) {
+          return socket.emit("errorMessage", "You cannot kick yourself");
+        }
+
+        // Remove from room
+        const idx = room.participants.findIndex(p => p.socketId === socketId);
+        if (idx !== -1) {
+          room.participants.splice(idx, 1);
+        }
+
+        // Notify the kicked user
+        io.to(socketId).emit("youWereKicked");
+
+        // Notify room
+        io.to(roomId).emit("participantKicked", { username: participant.username });
+        io.to(roomId).emit("systemMessage", sanitizeMessage(`${participant.username} was kicked from the room`));
+        io.to(roomId).emit("participantsUpdate", { participants: room.participants, adminId: room.adminId });
+
+        // Force disconnect the kicked user from room
+        const kickedSocket = io.sockets.sockets.get(socketId);
+        if (kickedSocket) {
+          kickedSocket.leave(roomId);
+        }
+      } catch (err) {
+        console.error("[SOCKET] kickParticipant error:", err);
+        socket.emit("errorMessage", "Failed to kick participant");
+      }
+    });
+
+    // End room (admin only)
+    socket.on("endRoom", async ({ roomId }) => {
+      try {
+        const room = rooms[roomId];
+        if (!room) return socket.emit("errorMessage", "Room not found");
+
+        if (socket.id !== room.adminId) {
+          return socket.emit("errorMessage", "Only admin can end the room");
+        }
+
+        // Update database
+        const dbRoom = await Room.findById(roomId);
+        if (dbRoom) {
+          dbRoom.status = "ended";
+          await dbRoom.save();
+        }
+
+        // Notify all participants
+        io.to(roomId).emit("roomEnded");
+        io.to(roomId).emit("systemMessage", sanitizeMessage("This room has been ended"));
+
+        // Kick everyone out
+        room.participants.forEach(p => {
+          const participantSocket = io.sockets.sockets.get(p.socketId);
+          if (participantSocket) {
+            participantSocket.leave(roomId);
+          }
+        });
+
+        // Delete in-memory room
+        delete rooms[roomId];
+      } catch (err) {
+        console.error("[SOCKET] endRoom error:", err);
+        socket.emit("errorMessage", "Failed to end room");
+      }
+    });
     socket.on("disconnect", () => {
       try {
         for (const roomId in rooms) {
@@ -237,9 +428,9 @@ function initSocket(server) {
               }
             }
 
-            io.to(roomId).emit("participantsUpdate", { 
-              participants: room.participants, 
-              adminId: room.adminId 
+            io.to(roomId).emit("participantsUpdate", {
+              participants: room.participants,
+              adminId: room.adminId
             });
             io.to(roomId).emit("systemMessage", sanitizeMessage(`${leaving.username} left the room`));
           }
@@ -264,9 +455,9 @@ function initSocket(server) {
           }
         }
 
-        io.to(roomId).emit("participantsUpdate", { 
-          participants: room.participants, 
-          adminId: room.adminId 
+        io.to(roomId).emit("participantsUpdate", {
+          participants: room.participants,
+          adminId: room.adminId
         });
         io.to(roomId).emit("systemMessage", sanitizeMessage(`${leaving.username} left the room`));
       }
@@ -291,9 +482,9 @@ function initSocket(server) {
             room.timer.timeLeft = (room.studyInterval || 25) * 60;
             if (room.currentSession < room.totalSessions) room.currentSession++;
           }
-          io.to(roomId).emit("sessionUpdate", { 
-            currentSession: room.currentSession, 
-            totalSessions: room.totalSessions 
+          io.to(roomId).emit("sessionUpdate", {
+            currentSession: room.currentSession,
+            totalSessions: room.totalSessions
           });
         }
         io.to(roomId).emit("timerUpdate", room.timer);

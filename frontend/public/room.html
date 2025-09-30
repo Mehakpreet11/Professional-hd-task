@@ -288,21 +288,157 @@
       border-radius: 8px;
       cursor: pointer;
     }
+    .settings-section {
+      margin-bottom: 1.5rem;
+    }
+  
+    .section-title {
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #1E3A8A;
+    }
+  
+    .info-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+  
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+  
+    .info-label {
+      font-weight: 500;
+      color: #64748B;
+      font-size: 0.875rem;
+    }
+  
+    .info-value {
+      font-weight: 600;
+      color: #1E3A8A;
+      font-size: 0.875rem;
+    }
+  
+    .info-value code {
+      background: #F1F5F9;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+  
+    .admin-note {
+      font-size: 0.875rem;
+      color: #64748B;
+      font-style: italic;
+      margin-bottom: 1rem;
+    }
+  
+    .control-group {
+      margin-bottom: 1.5rem;
+    }
+  
+    .control-label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+    }
+  
+    .danger-zone {
+      border: 2px solid #FEE2E2;
+      padding: 1rem;
+      border-radius: 8px;
+      background: #FEF2F2;
+    }
+  
+    .participants-manage {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      padding: 0.5rem;
+    }
+  
+    .participant-manage-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem;
+      margin-bottom: 0.5rem;
+      background: #F8FAFC;
+      border-radius: 6px;
+    }
+  
+    .participant-manage-info {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+  
+    .participant-manage-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #3B82F6;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.75rem;
+    }
+  
+    .participant-manage-name {
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+  
+    .kick-btn {
+      background: #DC2626;
+      color: white;
+      border: none;
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+  
+    .kick-btn:hover {
+      background: #B91C1C;
+    }
+  
+    .kick-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .header-actions {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
   </style>
 </head>
 
 <body>
   <!-- Room Header -->
-  <header class="room-header">
-    <div class="room-info">
-      <h1 id="roomName">Room Name</h1>
-      <div class="room-code" id="roomCode">Room Code:</div>
-    </div>
-    <button id="copyLinkBtn" class="btn btn-sm btn-outline-primary">
-      📋 Copy Room Link
+<header class="room-header">
+  <div class="room-info">
+    <h1 id="roomName">Room Name</h1>
+    <div class="room-code" id="roomCode">Room Code:</div>
+  </div>
+  <div class="header-actions">
+    <button id="settingsBtn" class="btn btn-outline-primary btn-sm me-2">
+      <i class="bi bi-gear"></i> Settings
+    </button>
+    <button id="copyLinkBtn" class="btn btn-outline-primary btn-sm me-2">
+      📋 Copy Link
     </button>
     <button class="leave-btn" id="leaveBtn">Leave Room</button>
-  </header>
+  </div>
+</header>
 
   <!-- Main Content -->
   <main class="main-content">
@@ -339,6 +475,115 @@
       </div>
     </section>
   </main>
+  <!-- Settings Modal -->
+<div class="modal fade" id="roomSettingsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">⚙️ Room Settings</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- Room Info Section -->
+        <div class="settings-section">
+          <h6 class="section-title">📋 Room Information</h6>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Room Name:</span>
+              <span class="info-value" id="modalRoomName">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Created by:</span>
+              <span class="info-value" id="modalCreator">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Created on:</span>
+              <span class="info-value" id="modalCreatedDate">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Privacy:</span>
+              <span class="info-value" id="modalPrivacy">-</span>
+            </div>
+            <div class="info-item" id="roomCodeRow" style="display: none;">
+              <span class="info-label">Room Code:</span>
+              <span class="info-value">
+                <code id="modalRoomCode">-</code>
+                <button class="btn btn-sm btn-outline-secondary ms-2" id="copyCodeBtn">📋</button>
+              </span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Current Admin:</span>
+              <span class="info-value" id="modalAdmin">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Total Sessions:</span>
+              <span class="info-value" id="modalTotalSessions">0</span>
+            </div>
+          </div>
+        </div>
+
+        <hr>
+
+        <!-- Room Controls Section (Admin Only) -->
+        <div class="settings-section">
+          <h6 class="section-title">🎛️ Room Controls</h6>
+          <p class="admin-note" id="adminNote">Only the room admin can modify these settings.</p>
+
+          <!-- Edit Room Name -->
+          <div class="control-group">
+            <label class="control-label">🏷️ Room Name</label>
+            <div class="input-group mb-2">
+              <input type="text" class="form-control" id="editRoomName" placeholder="New room name">
+              <button class="btn btn-primary" id="saveRoomNameBtn" disabled>Save</button>
+            </div>
+          </div>
+
+          <!-- Edit Timer Intervals -->
+          <div class="control-group">
+            <label class="control-label">⏱️ Timer Intervals</label>
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label small">Study (minutes)</label>
+                <input type="number" class="form-control" id="editStudyInterval" min="1" max="120" disabled>
+              </div>
+              <div class="col-6">
+                <label class="form-label small">Break (minutes)</label>
+                <input type="number" class="form-control" id="editBreakInterval" min="1" max="30" disabled>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-sm w-100" id="saveIntervalsBtn" disabled>Save Intervals</button>
+          </div>
+
+          <!-- Change Password (Private Rooms Only) -->
+          <div class="control-group" id="changePasswordGroup" style="display: none;">
+            <label class="control-label">🔑 Change Room Password</label>
+            <div class="input-group mb-2">
+              <input type="text" class="form-control" id="newPassword" placeholder="New password" disabled>
+              <button class="btn btn-primary" id="savePasswordBtn" disabled>Change</button>
+            </div>
+          </div>
+
+          <!-- Manage Participants -->
+          <div class="control-group">
+            <label class="control-label">👥 Manage Participants</label>
+            <div class="participants-manage" id="participantsManage">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- End Room (Danger Zone) -->
+          <div class="control-group danger-zone">
+            <label class="control-label text-danger">🔴 Danger Zone</label>
+            <button class="btn btn-danger w-100" id="endRoomBtn" disabled>End Room</button>
+            <small class="text-muted d-block mt-1">This will end the session and kick all participants.</small>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
 
   <!-- Scripts -->
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
