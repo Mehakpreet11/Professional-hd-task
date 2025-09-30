@@ -383,26 +383,27 @@ function initSocket(server) {
       }
     });
 
-    // End room (admin only)
+    // End room (CREATOR only - not just admin)
     socket.on("endRoom", async ({ roomId }) => {
       try {
         const room = rooms[roomId];
         if (!room) return socket.emit("errorMessage", "Room not found");
 
-        if (socket.id !== room.adminId) {
-          return socket.emit("errorMessage", "Only admin can end the room");
+        // Check if user is the creator (not just admin)
+        const dbRoom = await Room.findById(roomId);
+        if (!dbRoom) return socket.emit("errorMessage", "Room not found");
+
+        if (dbRoom.creator.toString() !== userId.toString()) {
+          return socket.emit("errorMessage", "Only the room creator can end the room");
         }
 
         // Update database
-        const dbRoom = await Room.findById(roomId);
-        if (dbRoom) {
-          dbRoom.status = "ended";
-          await dbRoom.save();
-        }
+        dbRoom.status = "ended";
+        await dbRoom.save();
 
         // Notify all participants
         io.to(roomId).emit("roomEnded");
-        io.to(roomId).emit("systemMessage", sanitizeMessage("This room has been ended"));
+        io.to(roomId).emit("systemMessage", sanitizeMessage("This room has been ended by the creator"));
 
         // Kick everyone out
         room.participants.forEach(p => {
@@ -434,6 +435,14 @@ function initSocket(server) {
               }
             }
 
+            // AUTO-END: If room is now empty, end it
+            if (room.participants.length === 0) {
+              console.log(`[SOCKET] Room ${roomId} is empty, ending...`);
+              Room.findByIdAndUpdate(roomId, { status: "ended" }).catch(console.error);
+              delete rooms[roomId];
+              return; // No need to emit to empty room
+            }
+
             io.to(roomId).emit("participantsUpdate", {
               participants: room.participants,
               adminId: room.adminId
@@ -459,6 +468,14 @@ function initSocket(server) {
           if (room.adminId) {
             io.to(roomId).emit("systemMessage", sanitizeMessage(`${room.participants[0].username} is now the admin`));
           }
+        }
+
+        // AUTO-END: If room is now empty, end it
+        if (room.participants.length === 0) {
+          console.log(`[SOCKET] Room ${roomId} is empty, ending...`);
+          Room.findByIdAndUpdate(roomId, { status: "ended" }).catch(console.error);
+          delete rooms[roomId];
+          return; // No need to emit to empty room
         }
 
         io.to(roomId).emit("participantsUpdate", {

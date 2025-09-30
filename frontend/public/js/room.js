@@ -301,8 +301,17 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("modalRoomCode").textContent = roomData.code || "N/A";
     } else document.getElementById("roomCodeRow").style.display = "none";
 
-    const controls = ["editRoomName", "editStudyInterval", "editBreakInterval", "saveRoomNameBtn", "saveIntervalsBtn", "endRoomBtn"];
-    controls.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = !isAdmin; });
+    const controls = ["editRoomName", "editStudyInterval", "editBreakInterval", "saveRoomNameBtn", "saveIntervalsBtn"];
+    controls.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.disabled = !isAdmin;
+    });
+
+    // End room button - only for CREATOR
+    const endRoomBtn = document.getElementById("endRoomBtn");
+    if (endRoomBtn) {
+      endRoomBtn.disabled = !isCreator; // Only creator can end room
+    }
 
     const passwordGroup = document.getElementById("changePasswordGroup");
     if (roomData.isPrivate && isCreator) {

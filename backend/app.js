@@ -17,6 +17,7 @@ app.use(cors({
   origin: [
     'https://study-mate-9eun.vercel.app',
     'http://localhost:3000',
+    'http://localhost:4000',
     'http://localhost:5173',
     'http://localhost:8080'
   ],
