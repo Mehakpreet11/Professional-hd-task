@@ -19,6 +19,169 @@
             font-family: 'Inter', sans-serif;
         }
 
+        /* Modern Dashboard Header - Matches Room Style */
+        .dashboard-header {
+            background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
+            padding: 1rem 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .brand-section {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .brand-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .brand-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .brand-title {
+            margin: 0;
+            font-size: 1.375rem;
+            font-weight: 700;
+            color: white;
+            letter-spacing: -0.5px;
+        }
+
+        .brand-subtitle {
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.125rem;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            background: #10B981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .header-btn {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .header-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .header-btn i {
+            font-size: 1.125rem;
+        }
+
+        .logout-btn {
+            background: rgba(220, 38, 38, 0.9);
+            border: 1px solid rgba(220, 38, 38, 1);
+        }
+
+        .logout-btn:hover {
+            background: rgba(185, 28, 28, 1);
+        }
+
+        /* Adjust container spacing */
+        .container {
+            max-width: 1400px;
+        }
+
+        /* Remove old navbar styles */
+        .navbar {
+            display: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .dashboard-header {
+                padding: 0.875rem 1rem;
+            }
+
+            .brand-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 1.25rem;
+            }
+
+            .brand-title {
+                font-size: 1.125rem;
+            }
+
+            .brand-subtitle {
+                font-size: 0.8rem;
+            }
+
+            .header-btn span {
+                display: none;
+            }
+
+            .header-btn {
+                padding: 0.5rem;
+            }
+
+            .header-btn i {
+                margin: 0;
+            }
+        }
+
         .navbar {
             background-color: var(--primary-blue);
         }
@@ -164,18 +327,36 @@
 </head>
 
 <body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">📚 StudyMate</a>
-            <button class="btn btn-outline-light" id="logoutBtn">Logout</button>
+    <!-- Modern Header - Matches Room Style -->
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="brand-section">
+                <div class="brand-icon">
+                    <!-- <i class="bi bi-book-fill"></i> -->
+                     <img src="./images/studymate-high-resolution-logo-transparent.png" alt="logo" style="height: 48px;" >
+                </div>
+                <div class="brand-details">
+                    <h1 class="brand-title">StudyMate</h1>
+                    <div class="brand-subtitle">
+                        <span class="status-indicator"></span>
+                        <span>Welcome back, <span id="username">User</span></span>
+                    </div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <!-- <button class="header-btn" id="profileBtn">
+                    <i class="bi bi-person-circle"></i>
+                    <span>Profile</span>
+                </button> -->
+                <button class="header-btn logout-btn" id="logoutBtn">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
         </div>
-    </nav>
+    </header>
 
     <div class="container my-5">
-        <!-- Welcome -->
-        <h2 class="mb-4">Welcome back, <span id="username">User</span>! 👋</h2>
-
         <!-- Stats Cards -->
         <div class="row g-4 mb-5">
             <div class="col-md-4">
@@ -209,8 +390,7 @@
         <!-- Search Rooms -->
         <div class="card p-4 mb-4">
             <h5 class="mb-3">🔍 Find a Room</h5>
-            <input type="text" id="searchInput" class="search-input" 
-                   placeholder="Search by room name...">
+            <input type="text" id="searchInput" class="search-input" placeholder="Search by room name...">
         </div>
 
         <!-- Search Results (shown when searching) -->
