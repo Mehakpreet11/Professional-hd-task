@@ -1,12 +1,22 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "StudyMate backend (Express + Mongoose)",
   "main": "app.js",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "nodemon app.js",
     "start": "node app.js",
-    "test": "mocha --recursive --exit"
+
+    "lint": "eslint . -f json -o reports/eslint/eslint.json || true",
+
+    "test": "mocha --recursive --exit",
+    "test:ci": "mocha --recursive --reporter mocha-junit-reporter --reporter-options mochaFile=reports/junit/junit.xml,testsuitesTitle=backend-tests --exit",
+    "coverage": "nyc --reporter=html --report-dir=reports/coverage npm run test",
+
+    "audit": "npm audit"
   },
   "keywords": [],
   "author": "",
@@ -27,9 +37,12 @@
     "socket.io": "^4.8.1"
   },
   "devDependencies": {
-    "chai": "^6.0.1",
-    "mocha": "^11.7.2",
+    "chai": "^5.1.1",
+    "eslint": "^9.10.0",
+    "mocha": "^11.0.0",
+    "mocha-junit-reporter": "^2.2.1",
     "nodemon": "^3.1.10",
+    "nyc": "^15.1.0",
     "supertest": "^7.1.4"
   }
 }

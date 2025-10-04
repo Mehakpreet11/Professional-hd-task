@@ -1,0 +1,24 @@
+services:
+  mongo:
+    image: mongo:6
+    ports: ["27017:27017"]
+    volumes: ["mongo-staging:/data/db"]
+
+  backend:
+    image: studymate-backend:${VERSION-DEV}
+    environment:
+      - MONGO_URL=mongodb://mongo:27017/studymate
+      - NODE_ENV=staging
+      - PORT=5000
+    depends_on: [mongo]
+    ports: ["5001:5000"]
+
+  frontend:
+    image: studymate-frontend:${VERSION-DEV}
+    environment:
+      - REACT_APP_API=http://localhost:5001
+    depends_on: [backend]
+    ports: ["3001:3000"]
+
+volumes:
+  mongo-staging:

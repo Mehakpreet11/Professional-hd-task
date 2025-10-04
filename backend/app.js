@@ -51,6 +51,9 @@ app.get("/", (req, res) => {
   res.redirect("/dashboard.html");
 });
 
+app.get('/health', (req, res) => res.json({ status: 'ok', ts: Date.now() }));
+app.get('/metrics', (req, res) => res.type('text/plain').send('app_up 1\n'))
+
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/rooms", roomsRoutes);
