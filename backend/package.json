@@ -12,7 +12,7 @@
 
     "lint": "eslint . -f json -o reports/eslint/eslint.json || true",
 
-    "test": "mocha --recursive --exit",
+     "test": "mocha \"tests/**/*.js\" --recursive --exit",
     "test:ci": "mocha --recursive --reporter mocha-junit-reporter --reporter-options mochaFile=reports/junit/junit.xml,testsuitesTitle=backend-tests --exit",
     "coverage": "nyc --reporter=html --report-dir=reports/coverage npm run test",
 
