@@ -70,10 +70,6 @@ pipeline {
         echo "Building images: ${BACKEND_IMAGE} and ${FRONTEND_IMAGE}"
         bat "docker build -t ${BACKEND_IMAGE} -f backend\\Dockerfile backend"
         bat "docker build -t ${FRONTEND_IMAGE} -f frontend\\Dockerfile frontend"
-
-        // QUICK FIX: retag builds to match your compose hard-coded :DEV tags
-        bat "docker tag ${BACKEND_IMAGE} studymate-backend:DEV"
-        bat "docker tag ${FRONTEND_IMAGE} studymate-frontend:DEV"
       }
     }
 
@@ -86,26 +82,28 @@ pipeline {
     stage('Deploy: Staging') {
       steps {
         script {
-          // still write env files so you can switch to variable-based compose later
+          // Pass exact tags to compose (assuming your compose uses ${BACKEND_IMAGE} / ${FRONTEND_IMAGE})
           writeFile file: '.env.staging', text: """
 BACKEND_IMAGE=${env.BACKEND_IMAGE}
 FRONTEND_IMAGE=${env.FRONTEND_IMAGE}
 """.trim()
-
-          // validate & bring up (compose currently uses :DEV; the retag above ensures local images exist)
           bat 'docker compose --env-file .env.staging -f docker-compose.staging.yml config'
           bat 'docker compose --env-file .env.staging -f docker-compose.staging.yml up -d'
-
-          // health check with retries
-          bat """
-          powershell -Command "$ErrorActionPreference='Stop'; \
-            for ($i=0; $i -lt 20; $i++) { \
-              try { Invoke-WebRequest '${HEALTH_URL}' -UseBasicParsing | Out-Null; exit 0 } \
-              catch { Start-Sleep -Seconds 3 } \
-            } \
-            Write-Error 'Backend health check failed after retries.'"
-          """
         }
+
+        // ---- FIXED HEALTH CHECK (PowerShell step; no Groovy interpolation issues) ----
+        powershell '''
+$ErrorActionPreference = "Stop"
+for ($i=0; $i -lt 20; $i++) {
+  try {
+    Invoke-WebRequest "$env:HEALTH_URL" -UseBasicParsing | Out-Null
+    exit 0
+  } catch {
+    Start-Sleep -Seconds 3
+  }
+}
+throw "Backend health check failed after retries."
+'''
       }
     }
 
@@ -113,17 +111,13 @@ FRONTEND_IMAGE=${env.FRONTEND_IMAGE}
       when { branch 'main' }
       steps {
         script {
-          if (params.AUTO_RELEASE) {
-            echo 'AUTO_RELEASE=true -> skipping manual approval and promoting to Production.'
-          } else {
+          if (!params.AUTO_RELEASE) {
             timeout(time: 15, unit: 'MINUTES') {
               input message: 'Promote to Production?', ok: 'Release'
             }
+          } else {
+            echo 'AUTO_RELEASE=true -> promoting without manual approval.'
           }
-
-          // also retag as :PROD if your prod compose is hard-coded similarly
-          bat "docker tag ${BACKEND_IMAGE} studymate-backend:PROD"
-          bat "docker tag ${FRONTEND_IMAGE} studymate-frontend:PROD"
 
           writeFile file: '.env.prod', text: """
 BACKEND_IMAGE=${env.BACKEND_IMAGE}
