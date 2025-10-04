@@ -1,4 +1,7 @@
-const { expect } = require('chai');
+const assert = require('assert');
+
 describe('sanity', () => {
-  it('1 + 1 = 2', () => expect(1 + 1).to.equal(2));
+  it('1 + 1 = 2', () => {
+    assert.strictEqual(1 + 1, 2);
+  });
 });
