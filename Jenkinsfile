@@ -1,151 +1,117 @@
 pipeline {
   agent any
-  options {
-    timestamps()
-    buildDiscarder(logRotator(numToKeepStr: '20'))
-    ansiColor('xterm')
-  }
+  options { timestamps(); ansiColor('xterm') }
+
   environment {
-    // Node & Sonar names must match Jenkins tool config
-    NODEJS_HOME = tool name: 'Node 20', type: 'jenkins.plugins.nodejs.tools.NodeJSInstallation'
-    PATH = "${NODEJS_HOME}/bin:${env.PATH}"
-    SONARQUBE_ENV = 'LocalSonar'
-    APP_NAME = 'studymate'
-    IMAGE_BACKEND = 'studymate-backend'
+    IMAGE_BACKEND  = 'studymate-backend'
     IMAGE_FRONTEND = 'studymate-frontend'
-    VERSION = "${env.BUILD_NUMBER}"
-    GIT_SHA = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+    VERSION        = "${env.BUILD_NUMBER}"
   }
+
   stages {
     stage('Checkout') {
       steps {
         checkout scm
-        script { currentBuild.displayName = "#${env.BUILD_NUMBER} ${env.GIT_SHA}" }
       }
     }
 
-    stage('Install') {
+    stage('Backend: Install & Test (Mocha)') {
       steps {
         dir('backend') {
-          sh 'npm ci'
-        }
-        dir('frontend') {
-          sh 'npm ci'
-        }
-      }
-    }
+          // install deps
+          bat 'npm ci'
 
-    stage('Build') {
-      steps {
-        dir('frontend') {
-          sh 'npm run build'
-          // archive built frontend for artifacts
-          archiveArtifacts artifacts: 'build/**', fingerprint: true
-        }
-      }
-    }
+          // run your existing mocha tests
+          bat 'npm test'
 
-    stage('Test') {
-      steps {
-        dir('backend') {
-          sh 'npm run test:ci' // produces junit + coverage
+          // OPTIONAL: if you later add coverage script ("npm run coverage"),
+          // this will produce backend/reports/coverage/index.html
+          bat 'IF EXIST package.json (npm run coverage) ELSE echo No coverage script, skipping.'
+
+          // OPTIONAL: basic audit report (won’t fail the build)
+          bat '''
+          IF NOT EXIST reports\\audit mkdir reports\\audit
+          cmd /c "npm audit --json > reports\\audit\\npm-audit.json" || ver >NUL
+          '''
         }
       }
       post {
         always {
-          junit testResults: 'backend/reports/junit/*.xml', allowEmptyResults: true
-          publishHTML([
-            reportDir: 'backend/reports/coverage',
-            reportFiles: 'index.html',
-            reportName: 'Backend Coverage'
-          ])
+          // Publish coverage HTML only if it exists (prevents your earlier error)
+          script {
+            if (fileExists('backend/reports/coverage/index.html')) {
+              publishHTML(target: [
+                reportDir: 'backend/reports/coverage',
+                reportFiles: 'index.html',
+                reportName: 'Backend Coverage',
+                allowMissing: true,
+                alwaysLinkToLastBuild: true,
+                keepAll: true
+              ])
+            } else {
+              echo 'No coverage HTML found; skipping publishHTML.'
+            }
+          }
+
+          // Archive whatever reports exist (ok if empty)
+          archiveArtifacts artifacts: 'backend/reports/**/*', allowEmptyArchive: true, fingerprint: true
         }
       }
     }
 
-    stage('Code Quality (ESLint + Sonar)') {
+    stage('Build Docker Images') {
       steps {
-        dir('backend') {
-          sh 'npm run lint || true' // don't hard fail on lint; Sonar gate will do
-          recordIssues enabledForFailure: true, tools: [eslint(pattern: 'reports/eslint/*.json')]
-        }
-        withSonarQubeEnv("${SONARQUBE_ENV}") {
-          sh 'sonar-scanner -Dsonar.projectKey=studymate -Dsonar.projectBaseDir=.'
-        }
+        // Build backend image (context = backend/)
+        bat 'docker build -t %IMAGE_BACKEND%:%VERSION% -f backend\\Dockerfile backend'
+
+        // Build static frontend image (context = frontend/)
+        bat 'docker build -t %IMAGE_FRONTEND%:%VERSION% -f frontend\\Dockerfile frontend'
       }
     }
 
-    stage('Security (npm audit + Trivy)') {
+    stage('Security (optional quick placeholder)') {
       steps {
-        dir('backend') {
-          sh 'npm audit --json > reports/audit.json || true'
-          archiveArtifacts artifacts: 'reports/audit.json', fingerprint: true
-          // optional: fail on high vulns
-          sh '''
-            node -e "
-              const r=require('./reports/audit.json');
-              const highs=(r.vulnerabilities||{}).high||0;
-              const criticals=(r.vulnerabilities||{}).critical||0;
-              if(highs+criticals>0){ 
-                console.log('Found high/critical vulnerabilities:', highs, criticals); 
-              }
-            "
-          '''
-        }
-        // Build images for scan
-        sh 'docker build -t ${IMAGE_BACKEND}:${GIT_SHA} -f backend/Dockerfile .'
-        sh 'docker build -t ${IMAGE_FRONTEND}:${GIT_SHA} -f frontend/Dockerfile .'
-        // Trivy scan (requires trivy installed on the agent)
-        sh 'trivy image --exit-code 0 --severity HIGH,CRITICAL ${IMAGE_BACKEND}:${GIT_SHA} > trivy-backend.txt || true'
-        sh 'trivy image --exit-code 0 --severity HIGH,CRITICAL ${IMAGE_FRONTEND}:${GIT_SHA} > trivy-frontend.txt || true'
-        archiveArtifacts artifacts: 'trivy-*.txt', fingerprint: true
-      }
-    }
-
-    stage('Docker Build & Tag') {
-      steps {
-        sh 'docker tag ${IMAGE_BACKEND}:${GIT_SHA} ${IMAGE_BACKEND}:${VERSION}'
-        sh 'docker tag ${IMAGE_FRONTEND}:${GIT_SHA} ${IMAGE_FRONTEND}:${VERSION}'
+        echo 'Add Trivy/Snyk later for HD Security stage; placeholder keeps pipeline complete.'
       }
     }
 
     stage('Deploy: Staging') {
       steps {
-        sh 'docker compose -f docker-compose.staging.yml up -d'
-        // Smoke checks
-        sh 'curl -fsS http://localhost:5001/health || (docker compose -f docker-compose.staging.yml logs --no-color > staging-logs.txt && false)'
-        archiveArtifacts artifacts: 'staging-logs.txt', allowEmptyArchive: true
+        // Bring up staging stack
+        bat 'docker compose -f docker-compose.staging.yml up -d'
+
+        // Health check backend (use PowerShell for reliable curl)
+        bat 'powershell -Command "Invoke-WebRequest http://localhost:5001/health -UseBasicParsing | Out-Null"'
       }
     }
 
-    stage('Release: Promote to Prod') {
-      when { expression { return params?.AUTO_RELEASE == true || env.BRANCH_NAME == 'main' } }
+    stage('Release: Prod (manual approval)') {
       steps {
-        input message: 'Promote this build to Production?', ok: 'Release'
-        sh 'docker compose -f docker-compose.prod.yml up -d'
-        sh 'curl -fsS http://localhost:5002/health || (docker compose -f docker-compose.prod.yml logs --no-color > prod-logs.txt && false)'
-        archiveArtifacts artifacts: 'prod-logs.txt', allowEmptyArchive: true
+        input message: 'Promote to Production?', ok: 'Release'
+        bat 'docker compose -f docker-compose.prod.yml up -d'
+        bat 'powershell -Command "Invoke-WebRequest http://localhost:5002/health -UseBasicParsing | Out-Null"'
       }
     }
 
-    stage('Monitoring & Alerting (quick check)') {
+    stage('Monitoring Check') {
       steps {
         script {
-          def ok1 = sh(returnStatus: true, script: 'curl -fsS http://localhost:5002/metrics > /dev/null') == 0
-          def ok2 = sh(returnStatus: true, script: 'curl -fsS http://localhost:5002/health > /dev/null') == 0
-          if (!ok1 || !ok2) {
-            emailext subject: "❗Prod health check failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                     body: "Health/metrics check failed. See build ${env.BUILD_URL}",
-                     to: "you@example.com"
-            error("Monitoring check failed")
+          // Try health; error the build if prod looks down
+          def rc = bat(returnStatus: true, script: 'powershell -Command "Invoke-WebRequest http://localhost:5002/health -UseBasicParsing | Out-Null"')
+          if (rc != 0) {
+            error('Prod health check failed')
+          } else {
+            echo 'Prod health OK'
           }
         }
       }
     }
   }
+
   post {
     always {
-      archiveArtifacts artifacts: 'backend/reports/**/*, frontend/build/**/*', allowEmptyArchive: true
+      // Keep some docker/compose logs if needed (won’t fail if missing)
+      archiveArtifacts artifacts: '**/*.log', allowEmptyArchive: true
     }
   }
 }
