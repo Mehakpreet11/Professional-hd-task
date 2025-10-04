@@ -14,12 +14,10 @@ pipeline {
   }
 
   environment {
-    // Tag images with BUILD_NUMBER unless explicitly provided
-    TAG              = "${params.IMAGE_TAG ?: env.BUILD_NUMBER}"
-    BACKEND_IMAGE    = "studymate-backend:${TAG}"
-    FRONTEND_IMAGE   = "studymate-frontend:${TAG}"
-    // Health endpoint of backend (staging/prod map to same port here)
-    HEALTH_URL       = "http://localhost:5001/health"
+    TAG            = "${params.IMAGE_TAG ?: env.BUILD_NUMBER}"
+    BACKEND_IMAGE  = "studymate-backend:${TAG}"
+    FRONTEND_IMAGE = "studymate-frontend:${TAG}"
+    HEALTH_URL     = "http://localhost:5001/health"
   }
 
   stages {
@@ -37,7 +35,6 @@ pipeline {
       steps {
         dir('backend') {
           bat 'npm ci'
-          // Run mocha if tests/ exists
           bat '''
           IF EXIST tests (
             npx mocha "tests/**/*.spec.js" --recursive --exit || (
@@ -52,7 +49,6 @@ pipeline {
       }
       post {
         always {
-          // Publish coverage HTML if present (adjust path to your actual coverage output)
           script {
             if (fileExists('backend\\reports\\coverage\\index.html')) {
               publishHTML(target: [
@@ -74,6 +70,10 @@ pipeline {
         echo "Building images: ${BACKEND_IMAGE} and ${FRONTEND_IMAGE}"
         bat "docker build -t ${BACKEND_IMAGE} -f backend\\Dockerfile backend"
         bat "docker build -t ${FRONTEND_IMAGE} -f frontend\\Dockerfile frontend"
+
+        // QUICK FIX: retag builds to match your compose hard-coded :DEV tags
+        bat "docker tag ${BACKEND_IMAGE} studymate-backend:DEV"
+        bat "docker tag ${FRONTEND_IMAGE} studymate-frontend:DEV"
       }
     }
 
@@ -86,19 +86,17 @@ pipeline {
     stage('Deploy: Staging') {
       steps {
         script {
-          // Write env file that docker compose will read for image names
+          // still write env files so you can switch to variable-based compose later
           writeFile file: '.env.staging', text: """
 BACKEND_IMAGE=${env.BACKEND_IMAGE}
 FRONTEND_IMAGE=${env.FRONTEND_IMAGE}
 """.trim()
 
-          // Validate compose file before bringing it up
+          // validate & bring up (compose currently uses :DEV; the retag above ensures local images exist)
           bat 'docker compose --env-file .env.staging -f docker-compose.staging.yml config'
-
-          // Bring up staging stack
           bat 'docker compose --env-file .env.staging -f docker-compose.staging.yml up -d'
 
-          // Simple health check with retries (PowerShell on Windows agent)
+          // health check with retries
           bat """
           powershell -Command "$ErrorActionPreference='Stop'; \
             for ($i=0; $i -lt 20; $i++) { \
@@ -123,13 +121,15 @@ FRONTEND_IMAGE=${env.FRONTEND_IMAGE}
             }
           }
 
-          // Pass the exact images we just built into prod compose
+          // also retag as :PROD if your prod compose is hard-coded similarly
+          bat "docker tag ${BACKEND_IMAGE} studymate-backend:PROD"
+          bat "docker tag ${FRONTEND_IMAGE} studymate-frontend:PROD"
+
           writeFile file: '.env.prod', text: """
 BACKEND_IMAGE=${env.BACKEND_IMAGE}
 FRONTEND_IMAGE=${env.FRONTEND_IMAGE}
 """.trim()
 
-          // Validate and deploy prod
           bat 'docker compose --env-file .env.prod -f docker-compose.prod.yml config'
           bat 'docker compose --env-file .env.prod -f docker-compose.prod.yml up -d'
         }
@@ -139,10 +139,10 @@ FRONTEND_IMAGE=${env.FRONTEND_IMAGE}
     stage('Monitoring Check') {
       when { branch 'main' }
       steps {
-        echo 'Add your monitoring/verifications here (e.g., curl checks, synthetic tests, ping Grafana/Loki).'
+        echo 'Add monitoring/verifications here.'
       }
     }
-  } // stages
+  }
 
   post {
     always {
