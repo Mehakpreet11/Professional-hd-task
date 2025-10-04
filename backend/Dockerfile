@@ -1,13 +1,15 @@
 FROM node:20-alpine
 WORKDIR /app
 
-# With context set to backend/, these files are at the root of the context
+# copy only manifests first
 COPY package*.json ./
-RUN npm ci --omit=dev
 
-# Copy the rest of the backend source
+# use install (tolerates lock mismatch) and skip dev deps for runtime image
+RUN npm install --omit=dev
+
+# now copy the rest of the source
 COPY . .
 
 ENV PORT=5000
 EXPOSE 5000
-CMD ["node", "app.js"]
+CMD ["node","app.js"]
