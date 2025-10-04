@@ -1,4 +1,7 @@
 // Grab form and error elements
+// Resolve API base injected by Nginx at container start
+const API = window.API_BASE || 'http://localhost:5001';
+
 const form = document.getElementById('loginForm');
 const emailError = document.getElementById('emailError');
 const passwordError = document.getElementById('passwordError');

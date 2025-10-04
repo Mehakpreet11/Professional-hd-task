@@ -1,4 +1,7 @@
 // Show/hide Room Code field based on Privacy
+// Resolve API base injected by Nginx at container start
+const API = window.API_BASE || 'http://localhost:5001';
+
 const privacySelect = document.getElementById("privacy");
 const roomCodeDiv = document.getElementById("roomCodeDiv");
 

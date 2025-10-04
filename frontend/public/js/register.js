@@ -1,4 +1,7 @@
 // Select form and notification container
+// Resolve API base injected by Nginx at container start
+const API = window.API_BASE || 'http://localhost:5001';
+
 const form = document.getElementById('registerForm');
 const notification = document.getElementById('notification');
 

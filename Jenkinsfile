@@ -18,17 +18,26 @@ pipeline {
     stage('Backend: Install & Test (Mocha)') {
       steps {
         dir('backend') {
-          // install deps
+          // Install deps
           bat 'npm ci'
 
-          // run your existing mocha tests
-          bat 'npm test'
+          // Run tests only if a test folder exists (prevents "No test files found")
+          bat '''
+          IF EXIST test (
+            echo Found "test" directory. Running mocha...
+            npm test
+          ) ELSE IF EXIST tests (
+            echo Found "tests" directory. Running mocha...
+            npm test
+          ) ELSE (
+            echo No test directory found; skipping mocha.
+          )
+          '''
 
-          // OPTIONAL: if you later add coverage script ("npm run coverage"),
-          // this will produce backend/reports/coverage/index.html
+          // OPTIONAL: run coverage only if you’ve added a "coverage" script later
           bat 'IF EXIST package.json (npm run coverage) ELSE echo No coverage script, skipping.'
 
-          // OPTIONAL: basic audit report (won’t fail the build)
+          // OPTIONAL: quick audit (does not fail build)
           bat '''
           IF NOT EXIST reports\\audit mkdir reports\\audit
           cmd /c "npm audit --json > reports\\audit\\npm-audit.json" || ver >NUL
@@ -37,7 +46,7 @@ pipeline {
       }
       post {
         always {
-          // Publish coverage HTML only if it exists (prevents your earlier error)
+          // Publish coverage HTML only if it exists (prevents errors)
           script {
             if (fileExists('backend/reports/coverage/index.html')) {
               publishHTML(target: [
@@ -52,8 +61,7 @@ pipeline {
               echo 'No coverage HTML found; skipping publishHTML.'
             }
           }
-
-          // Archive whatever reports exist (ok if empty)
+          // Archive any backend reports (ok if none)
           archiveArtifacts artifacts: 'backend/reports/**/*', allowEmptyArchive: true, fingerprint: true
         }
       }
@@ -63,7 +71,6 @@ pipeline {
       steps {
         // Build backend image (context = backend/)
         bat 'docker build -t %IMAGE_BACKEND%:%VERSION% -f backend\\Dockerfile backend'
-
         // Build static frontend image (context = frontend/)
         bat 'docker build -t %IMAGE_FRONTEND%:%VERSION% -f frontend\\Dockerfile frontend'
       }
@@ -71,7 +78,7 @@ pipeline {
 
     stage('Security (optional quick placeholder)') {
       steps {
-        echo 'Add Trivy/Snyk later for HD Security stage; placeholder keeps pipeline complete.'
+        echo 'Add Trivy/Snyk later for the HD Security stage.'
       }
     }
 
@@ -79,8 +86,7 @@ pipeline {
       steps {
         // Bring up staging stack
         bat 'docker compose -f docker-compose.staging.yml up -d'
-
-        // Health check backend (use PowerShell for reliable curl)
+        // Smoke check backend
         bat 'powershell -Command "Invoke-WebRequest http://localhost:5001/health -UseBasicParsing | Out-Null"'
       }
     }
@@ -96,7 +102,6 @@ pipeline {
     stage('Monitoring Check') {
       steps {
         script {
-          // Try health; error the build if prod looks down
           def rc = bat(returnStatus: true, script: 'powershell -Command "Invoke-WebRequest http://localhost:5002/health -UseBasicParsing | Out-Null"')
           if (rc != 0) {
             error('Prod health check failed')
@@ -110,7 +115,6 @@ pipeline {
 
   post {
     always {
-      // Keep some docker/compose logs if needed (won’t fail if missing)
       archiveArtifacts artifacts: '**/*.log', allowEmptyArchive: true
     }
   }

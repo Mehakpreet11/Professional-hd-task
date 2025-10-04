@@ -1,3 +1,6 @@
+// Resolve API base injected by Nginx at container start
+const API = window.API_BASE || 'http://localhost:5001';
+
 document.addEventListener("DOMContentLoaded", async () => {
   const token = localStorage.getItem("token");
   if (!token) {
