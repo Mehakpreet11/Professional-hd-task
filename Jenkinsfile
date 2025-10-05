@@ -82,7 +82,7 @@ pipeline {
     stage('Deploy: Staging') {
       steps {
         script {
-          // Pass exact tags to compose (assuming your compose uses ${BACKEND_IMAGE} / ${FRONTEND_IMAGE})
+       
           writeFile file: '.env.staging', text: """
 BACKEND_IMAGE=${env.BACKEND_IMAGE}
 FRONTEND_IMAGE=${env.FRONTEND_IMAGE}
@@ -91,7 +91,7 @@ FRONTEND_IMAGE=${env.FRONTEND_IMAGE}
           bat 'docker compose --env-file .env.staging -f docker-compose.staging.yml up -d'
         }
 
-        // ---- FIXED HEALTH CHECK (PowerShell step; no Groovy interpolation issues) ----
+        
         powershell '''
 $ErrorActionPreference = "Stop"
 for ($i=0; $i -lt 20; $i++) {
